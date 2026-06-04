@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // Simulamos los datos con URLs de imágenes falsas para probar el zoom
 const solicitudMock = {
