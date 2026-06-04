@@ -38,7 +38,7 @@ const solicitudMock = {
   ]
 };
 
-export default function EvaluarSolicitud() {
+export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?: string; onBack?: () => void }) {
   const [itemExpandido, setItemExpandido] = useState<string | null>(null);
   const [decisiones, setDecisiones] = useState<Record<string, string>>({});
   
@@ -84,11 +84,17 @@ export default function EvaluarSolicitud() {
 
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen relative">
+      {/* Botón volver a la lista */}
+      {onBack && (
+        <div className="mb-4">
+          <button onClick={onBack} className="text-sm text-blue-600 hover:underline">← Volver</button>
+        </div>
+      )}
       
       {/* HEADER DE LA SOLICITUD */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Solicitud: {solicitudMock.id}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Solicitud: {solicitudId ?? solicitudMock.id}</h1>
           <p className="text-gray-500 mt-1">Cliente: {solicitudMock.cliente}</p>
           <div className="flex gap-4 mt-3 text-sm">
             <span className="bg-gray-100 px-3 py-1 rounded-md">Fecha Compra: {solicitudMock.fechaCompra}</span>
