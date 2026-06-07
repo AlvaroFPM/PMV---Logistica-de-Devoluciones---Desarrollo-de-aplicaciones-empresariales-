@@ -1,0 +1,86 @@
+import { useState } from 'react';
+import { X, Upload, CheckCircle } from 'lucide-react';
+
+interface ObjetoEquivocadoModalProps {
+  onClose: () => void;
+  onGuardar: (tipo: string, descripcion: string, fotoAdjunta: boolean) => void;
+}
+
+export default function ObjetoEquivocadoModal({ onClose, onGuardar }: ObjetoEquivocadoModalProps) {
+  const [tipo, setTipo] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [fotoAdjunta, setFotoAdjunta] = useState(false);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Objeto Equivocado</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Registra el objeto no perteneciente a la solicitud</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tipo de Objeto</label>
+            <input
+              type="text"
+              value={tipo}
+              onChange={e => setTipo(e.target.value)}
+              placeholder="Ej: Electrónico, Accesorio, Ropa..."
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition placeholder-slate-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Descripción</label>
+            <textarea
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
+              rows={3}
+              placeholder="Describe el objeto encontrado, estado, características..."
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition resize-none placeholder-slate-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Evidencia Fotográfica</label>
+            {fotoAdjunta ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-sm font-semibold text-emerald-700">foto_evidencia.jpg adjunta</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setFotoAdjunta(true)}
+                className="flex items-center gap-2 px-4 py-3 w-full border-2 border-dashed border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-xl text-slate-500 hover:text-sky-600 text-sm font-semibold transition-all"
+              >
+                <Upload className="w-4 h-4" />
+                Subir Foto
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onGuardar(tipo, descripcion, fotoAdjunta)}
+            className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white text-sm font-semibold transition-all shadow-sm"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
