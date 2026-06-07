@@ -1,29 +1,29 @@
 import { useState } from 'react';
-import DashboardSolicitudes from './pages/ServicioCliente/DashboardSolicitudes';
-import EvaluarSolicitud from './pages/ServicioCliente/EvaluarSolicitud';
+import BandejaPagos from './pages/EjecutivoPagos/BandejaPagos';
+import ProcesarPago from './pages/EjecutivoPagos/ProcesarPago';
 
 function App() {
-  const [view, setView] = useState<'dashboard' | 'evaluar'>('dashboard');
+  const [view, setView] = useState<'bandeja' | 'procesar'>('bandeja');
   const [selectedSolicitud, setSelectedSolicitud] = useState<string | null>(null);
 
-  const handleEvaluar = (id?: string) => {
-    setSelectedSolicitud(id ?? null);
-    setView('evaluar');
-  };
-
-  const handleBack = () => {
-    setSelectedSolicitud(null);
-    setView('dashboard');
+  const handleProcesar = (id: string) => {
+    setSelectedSolicitud(id);
+    setView('procesar');
   };
 
   return (
-    <>
-      {view === 'dashboard' ? (
-        <DashboardSolicitudes onEvaluar={handleEvaluar} />
-      ) : (
-        <EvaluarSolicitud solicitudId={selectedSolicitud ?? undefined} onBack={handleBack} />
-      )}
-    </>
+    <div>
+      <main>
+        {view === 'bandeja' && <BandejaPagos onProcesar={handleProcesar} />}
+
+        {view === 'procesar' && (
+          <div className="p-6">
+            <button onClick={() => setView('bandeja')} className="mb-4 px-3 py-1 rounded bg-gray-200">Volver</button>
+            <ProcesarPago solicitudId={selectedSolicitud ?? undefined} />
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
 
