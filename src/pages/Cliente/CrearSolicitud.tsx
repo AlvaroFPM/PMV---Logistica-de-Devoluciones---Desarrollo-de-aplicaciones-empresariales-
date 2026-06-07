@@ -1,9 +1,9 @@
 // src/pages/Cliente/CrearSolicitud.tsx
 
 import { useState } from 'react';
-// import { useNavigate } from 'react-router-dom'; // Descomentar al integrar el enrutador
+import { useNavigate } from 'react-router-dom'; 
 import { TarjetaProductoDevolucion } from '../../components/TarjetaProductoDevolucion';
-import type { ItemFormState } from '../../types/devolucion';
+import type { ItemFormState, SolicitudDevolucion } from '../../types/devolucion';
 
 // Datos simulados de la orden de compra
 const productosOrden = [
@@ -16,7 +16,7 @@ const productosOrden = [
 const productosBloqueados = ['PROD-002'];
 
 export default function CrearSolicitud() {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // Inicialización perezosa (Lazy Initialization)
   const [formItems, setFormItems] = useState<Record<string, ItemFormState>>(() => {
@@ -62,31 +62,47 @@ export default function CrearSolicitud() {
     e.preventDefault();
 
     // Filtramos para aislar únicamente los ítems marcados por el usuario
-    const itemsAEnviar = Object.entries(formItems)
-      .filter(([_, estado]) => estado.seleccionado)
-      .map(([id, estado]) => ({
-        id,
-        nombreProducto: productosOrden.find(p => p.id === id)?.nombre || '',
-        ...estado
-      }));
+    const itemsSeleccionados = Object.entries(formItems)
+      .filter(([_, estado]) => estado.seleccionado);
 
-    if (itemsAEnviar.length === 0) {
+    if (itemsSeleccionados.length === 0) {
       alert('Debes seleccionar al menos un producto para devolver.');
       return;
     }
 
-    // Validación estricta antes de procesar
-    const faltanDatos = itemsAEnviar.some(item => !item.motivo || !item.evidencia);
+    // Validación estricta
+    const faltanDatos = itemsSeleccionados.some(([_, estado]) => !estado.motivo || !estado.evidencia);
     if (faltanDatos) {
       alert('Por favor, selecciona el motivo y adjunta la evidencia en todos los productos marcados.');
       return;
     }
 
-    // Aquí iría la lógica para guardar en localStorage y cambiar el estado global
-    console.log('Payload Maestro-Detalle listo para enviar:', itemsAEnviar);
-    alert('Solicitud creada con éxito. Redirigiendo a Mis Devoluciones...');
-    
-    // navigate('/cliente/mis-devoluciones');
+    // 1. Leer el historial existente
+    const historialExistente = localStorage.getItem('solicitudes_devolucion');
+    const solicitudes: SolicitudDevolucion[] = historialExistente ? JSON.parse(historialExistente) : [];
+
+    // 2. Construir la nueva solicitud
+    const nuevaSolicitud: SolicitudDevolucion = {
+      id: `DEV-2026-${Math.floor(100 + Math.random() * 900)}`, // ID Único simulado
+      idOrdenCompra: 'OC-2026-771', 
+      fechaCreacion: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+      estado: 'Creada',
+      items: itemsSeleccionados.map(([id, estado]) => ({
+        id,
+        nombreProducto: productosOrden.find(p => p.id === id)?.nombre || 'Producto',
+        motivo: estado.motivo,
+        evidencia: estado.evidencia, // Ya es un string, no necesitamos .name
+        estado: 'Pendiente'
+      }))
+    };
+
+    // 3 y 4. Guardar en localStorage
+    solicitudes.push(nuevaSolicitud);
+    localStorage.setItem('solicitudes_devolucion', JSON.stringify(solicitudes));
+
+    // 5. Redireccionar al usuario
+    alert(`Solicitud ${nuevaSolicitud.id} creada con éxito.`);
+    navigate('/cliente/mis-devoluciones');
   };
 
   return (

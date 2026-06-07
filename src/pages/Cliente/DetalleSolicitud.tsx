@@ -4,46 +4,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
 import type { SolicitudDevolucion, EstadoMaestro } from '../../types/devolucion';
 
-// MOCK DE DATOS: Escenario Mixto (Casos 5, 8 y de Inconsistencia Física)
-const mockBaseDatos: Record<string, SolicitudDevolucion> = {
-  'DEV-2026-085': {
-    id: 'DEV-2026-085',
-    idOrdenCompra: 'OC-2026-771',
-    fechaCreacion: '2026-05-20',
-    estado: 'En Resolución Parcial',
-    items: [
-      {
-        id: 'PROD-001',
-        nombreProducto: 'Cargador 45W Original',
-        motivo: 'Retracto',
-        evidencia: 'foto_caja_sellada.jpg',
-        estado: 'Aprobado — Apto para Reacondicionamiento'
-      },
-      {
-        id: 'PROD-002',
-        nombreProducto: 'Samsung Galaxy S24+',
-        motivo: 'Garantía',
-        evidencia: 'foto_pantalla_negra.jpg',
-        estado: 'Rechazado por Fraude'
-      },
-      {
-        id: 'PROD-003',
-        nombreProducto: 'Audífonos Inalámbricos Pro',
-        motivo: 'Garantía',
-        evidencia: 'foto_audifonos.jpg',
-        estado: 'Rechazado por Inconsistencia Física'
-      }
-    ]
-  }
-};
-
 // COMPONENTE AUXILIAR: Timeline de Progreso
 const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => {
   const pasos = ['Creada', 'En Revisión', 'Aprobada para Envío', 'En Tránsito', 'En Inspección Física'];
   const pasoActualIndex = pasos.indexOf(estadoActual) === -1 ? 5 : pasos.indexOf(estadoActual);
 
   return (
-    <div className="w-full py-4 overflow-x-auto">
+    <div className="w-full pt-4 pb-12 overflow-x-auto overflow-y-hidden">
       <div className="flex items-center min-w-max px-2">
         {pasos.map((paso, index) => {
           const completado = index < pasoActualIndex;
@@ -75,15 +42,19 @@ export default function DetalleSolicitud() {
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
 
-  // Simulamos la búsqueda en la base de datos
-  const solicitud = idSolicitud ? mockBaseDatos[idSolicitud] : null;
+  // LECTURA DESDE LA FUENTE ÚNICA DE VERDAD (localStorage)
+  const dataLocal = localStorage.getItem('solicitudes_devolucion');
+  const historial: SolicitudDevolucion[] = dataLocal ? JSON.parse(dataLocal) : [];
+  
+  // Buscamos la solicitud específica
+  const solicitud = historial.find(s => s.id === idSolicitud) || null;
 
   if (!solicitud) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
         <h2 className="text-xl font-bold text-gray-800">Solicitud no encontrada</h2>
         <p className="text-gray-500 mt-2">El código de solicitud ingresado no existe o no tienes permisos para verlo.</p>
-        <button onClick={() => navigate('/cliente/mis-devoluciones')} className="mt-4 text-blue-600 hover:underline">
+        <button onClick={() => navigate('/cliente/mis-devoluciones')} className="mt-4 text-blue-600 hover:underline font-medium">
           Volver a mis devoluciones
         </button>
       </div>
@@ -131,7 +102,7 @@ export default function DetalleSolicitud() {
           </div>
         )}
 
-        {/* Timeline Visual */}
+        {/* Timeline Visual (Ya con el bug del scroll corregido) */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-12">
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Progreso de la Solicitud</h2>
           <TimelineProgreso estadoActual={estado} />
@@ -201,9 +172,6 @@ export default function DetalleSolicitud() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <button className="w-full text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 py-2 rounded transition-colors">
-                      Modificar evidencia
-                    </button>
                     <button className="w-full text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:text-red-600 py-2 rounded transition-colors">
                       Cancelar devolución
                     </button>

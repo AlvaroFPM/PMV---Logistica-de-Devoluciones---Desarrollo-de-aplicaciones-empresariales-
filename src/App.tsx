@@ -12,7 +12,6 @@ export default function App() {
         <nav className="bg-white border-b border-gray-200 p-4 shadow-sm sticky top-0 z-50">
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div className="font-bold text-xl text-blue-600 tracking-tight">
-              Logística<span className="text-gray-800">UCT</span>
             </div>
             <div className="text-sm text-gray-600 font-medium">
               Portal del Cliente

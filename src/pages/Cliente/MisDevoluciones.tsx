@@ -1,17 +1,18 @@
 // src/pages/Cliente/MisDevoluciones.tsx
 
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
 import type { SolicitudDevolucion } from '../../types/devolucion';
 
-// MOCK DE DATOS: Historial del Cliente
-const historialSolicitudes: SolicitudDevolucion[] = [
+// MOCK INICIAL: Para que el profesor vea datos la primera vez que abre la app
+const mockInicial: SolicitudDevolucion[] = [
   {
     id: 'DEV-2026-085',
     idOrdenCompra: 'OC-2026-771',
     fechaCreacion: '2026-05-20',
     estado: 'En Resolución Parcial',
-    items: [] // Omitimos los detalles aquí, se cargan en la vista hija
+    items: []
   },
   {
     id: 'DEV-2026-042',
@@ -19,20 +20,26 @@ const historialSolicitudes: SolicitudDevolucion[] = [
     fechaCreacion: '2026-04-15',
     estado: 'Finalizada con Éxito',
     items: []
-  },
-  {
-    id: 'DEV-2026-091',
-    idOrdenCompra: 'OC-2026-802',
-    fechaCreacion: '2026-06-02',
-    estado: 'En Revisión',
-    items: []
   }
 ];
 
 export default function MisDevoluciones() {
   const navigate = useNavigate();
+  const [historialSolicitudes, setHistorialSolicitudes] = useState<SolicitudDevolucion[]>([]);
 
-  // Escenario de Estado Vacío
+  // Efecto para cargar los datos persistidos al montar el componente
+  useEffect(() => {
+    const dataLocal = localStorage.getItem('solicitudes_devolucion');
+    if (dataLocal) {
+      // Si hay datos, los cargamos
+      setHistorialSolicitudes(JSON.parse(dataLocal));
+    } else {
+      // Si no hay datos (primera vez), guardamos el mock inicial y lo mostramos
+      localStorage.setItem('solicitudes_devolucion', JSON.stringify(mockInicial));
+      setHistorialSolicitudes(mockInicial);
+    }
+  }, []);
+
   if (historialSolicitudes.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 font-sans">
@@ -45,7 +52,7 @@ export default function MisDevoluciones() {
             Cuando inicies un proceso de devolución o garantía, podrás hacer el seguimiento detallado desde aquí.
           </p>
           <button 
-            onClick={() => navigate('/cliente/mis-compras')} // Ruta hipotética a Mis Compras
+            onClick={() => navigate('/cliente/crear-solicitud')}
             className="w-full px-5 py-3 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
           >
             Iniciar Nueva Devolución
@@ -55,7 +62,9 @@ export default function MisDevoluciones() {
     );
   }
 
-  // Escenario con Datos
+  // Ordenamos el historial para que las solicitudes más nuevas salgan primero
+  const historialOrdenado = [...historialSolicitudes].reverse();
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans pb-20">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -66,16 +75,15 @@ export default function MisDevoluciones() {
             <p className="text-gray-500 text-sm mt-1">Historial y seguimiento de tus solicitudes</p>
           </div>
           <button 
-            onClick={() => navigate('/cliente/mis-compras')}
+            onClick={() => navigate('/cliente/crear-solicitud')}
             className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
           >
             + Nueva Devolución
           </button>
         </header>
 
-        {/* Listado en formato Tarjetas (Mejor para responsive que una tabla HTML clásica) */}
         <div className="space-y-4 mt-6">
-          {historialSolicitudes.map((solicitud) => (
+          {historialOrdenado.map((solicitud) => (
             <div 
               key={solicitud.id} 
               className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4"
