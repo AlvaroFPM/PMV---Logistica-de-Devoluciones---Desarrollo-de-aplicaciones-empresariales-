@@ -29,7 +29,7 @@ const solicitudMock = {
   ]
 };
 
-export default function ProcesarPago({ solicitudId }: { solicitudId?: string }) {
+export default function ProcesarPago({ solicitudId, onBack }: { solicitudId?: string; onBack?: () => void }) {
   const solicitud = { ...solicitudMock, id: solicitudId ?? solicitudMock.id };
   // Estado para guardar qué ítems seleccionó el ejecutivo para pagar AHORA
   const [itemsSeleccionados, setItemsSeleccionados] = useState<string[]>([]);
@@ -65,7 +65,7 @@ export default function ProcesarPago({ solicitudId }: { solicitudId?: string }) 
 
   const ejecutarPago = () => {
     const payload = {
-      solicitudId: solicitudMock.id,
+      solicitudId: solicitud.id,
       itemsPagados: itemsSeleccionados,
       numeroTransferencia: comprobanteBanco,
       montoTotalTransferido: totalAPagar
@@ -76,7 +76,14 @@ export default function ProcesarPago({ solicitudId }: { solicitudId?: string }) 
 
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Módulo de Pagos y Reembolsos</h1>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-gray-800">Módulo de Pagos y Reembolsos</h1>
+        {onBack && (
+          <button onClick={onBack} className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+            ← Volver a la bandeja
+          </button>
+        )}
+      </div>
 
       <div className="grid grid-cols-3 gap-6">
         
