@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
 import { useAppContext } from '../../context/AppContext';
@@ -40,8 +41,11 @@ const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => 
 export default function DetalleSolicitud() {
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
-  const { solicitudes, cancelarSolicitud } = useAppContext();
+  const { solicitudes, cancelarSolicitud, actualizarDatosBancarios } = useAppContext();
   const solicitud = solicitudes.find((s) => s.id === idSolicitud) || null;
+  const [banco, setBanco] = useState(() => solicitud?.cliente.banco ?? '');
+  const [cuenta, setCuenta] = useState(() => solicitud?.cliente.cuenta ?? '');
+  const [rut, setRut] = useState(() => solicitud?.cliente.rut ?? '');
 
   if (!solicitud) {
     return (
@@ -58,7 +62,18 @@ export default function DetalleSolicitud() {
   const { id, idOrdenCompra, fechaCreacion, estado, items, cliente, costoEnvioOriginal } = solicitud;
   const itemsAprobados = items.filter((item) => item.estado.includes('Aprobado'));
   const montoAprobado = itemsAprobados.reduce((total, item) => total + item.precio, 0);
-  const puedeCancelar = !estado.startsWith('Cancelada') && estado !== 'Finalizada con Éxito';
+  const requiereDatosBancarios = estado === 'Pendiente de Reembolso';
+  const datosBancariosCompletos = banco.trim() !== '' && cuenta.trim() !== '' && rut.trim() !== '';
+
+  const guardarDatosBancarios = () => {
+    if (!datosBancariosCompletos) {
+      alert('Completa el banco, el número de cuenta y el RUT para continuar.');
+      return;
+    }
+
+    actualizarDatosBancarios(id, rut.trim(), banco.trim(), cuenta.trim());
+    alert('Los datos bancarios quedaron guardados para el ejecutivo de pagos.');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans pb-20">
@@ -81,21 +96,6 @@ export default function DetalleSolicitud() {
             <BadgeEstado estado={estado} />
           </div>
         </header>
-
-        {puedeCancelar && (
-          <div className="flex justify-end">
-            <button
-              onClick={() => {
-                cancelarSolicitud(id);
-                alert('La devolución fue cancelada.');
-                navigate('/cliente/mis-devoluciones');
-              }}
-              className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
-            >
-              Cancelar devolución
-            </button>
-          </div>
-        )}
 
         {/* Banner de Resolución Parcial (RN7) */}
         {estado === 'En Resolución Parcial' && (
@@ -131,17 +131,6 @@ export default function DetalleSolicitud() {
             </div>
           </div>
         )}
-
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Datos del cliente</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
-            <p><span className="font-semibold">Nombre:</span> {cliente.nombre}</p>
-            <p><span className="font-semibold">RUT:</span> {cliente.rut}</p>
-            <p><span className="font-semibold">Banco:</span> {cliente.banco}</p>
-            <p><span className="font-semibold">Cuenta:</span> {cliente.cuenta}</p>
-            <p><span className="font-semibold">Costo envío original:</span> ${costoEnvioOriginal.toLocaleString('es-CL')}</p>
-          </div>
-        </div>
 
         {/* Listado Maestro-Detalle */}
         <div className="space-y-4">
@@ -209,6 +198,72 @@ export default function DetalleSolicitud() {
               </div>
             </div>
           ))}
+        </div>
+
+        {requiereDatosBancarios && (
+          <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm">
+            <div className="mb-4">
+              <h3 className="text-sm font-bold text-blue-700 uppercase tracking-wider">Datos bancarios para reembolso</h3>
+              <p className="text-sm text-gray-600 mt-1">Completa esta información para que el ejecutivo de pagos pueda transferir el dinero correctamente.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Banco
+                <input
+                  type="text"
+                  value={banco}
+                  onChange={(e) => setBanco(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: Banco de Chile"
+                />
+              </label>
+
+              <label className="block text-sm font-medium text-gray-700">
+                Número de cuenta
+                <input
+                  type="text"
+                  value={cuenta}
+                  onChange={(e) => setCuenta(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: 123456789"
+                />
+              </label>
+
+              <label className="block text-sm font-medium text-gray-700">
+                RUT
+                <input
+                  type="text"
+                  value={rut}
+                  onChange={(e) => setRut(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: 123456789"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex items-center justify-end gap-3">
+              <span className="text-xs text-gray-500">Estos datos se usarán luego en la vista de pagos.</span>
+              <button
+                type="button"
+                onClick={guardarDatosBancarios}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Guardar datos bancarios
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Datos del cliente</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+            <p><span className="font-semibold">Nombre:</span> {cliente.nombre}</p>
+            <p><span className="font-semibold">RUT:</span> {cliente.rut}</p>
+            <p><span className="font-semibold">Banco:</span> {cliente.banco}</p>
+            <p><span className="font-semibold">Cuenta:</span> {cliente.cuenta}</p>
+            <p><span className="font-semibold">Costo envío original:</span> ${costoEnvioOriginal.toLocaleString('es-CL')}</p>
+          </div>
         </div>
 
       </div>

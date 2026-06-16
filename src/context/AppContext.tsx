@@ -13,6 +13,7 @@ interface AppContextProps {
   logout: () => void;
   crearSolicitud: (nueva: SolicitudMaestra) => void;
   cancelarSolicitud: (id: string) => void;
+  actualizarDatosBancarios: (id: string, rut: string, banco: string, cuenta: string) => void;
   evaluarSolicitud: (id: string, decisiones: Record<string, string>) => void;
   inspeccionarSolicitud: (id: string, items: SolicitudMaestra['items'], objetos: SolicitudMaestra['objetos_equivocados']) => void;
   pagarSolicitud: (id: string) => void;
@@ -94,6 +95,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setSolicitudes((prev) => prev.map((solicitud) => (solicitud.id === id ? { ...solicitud, estado: 'Cancelada por el Cliente' } : solicitud)));
   };
 
+  const actualizarDatosBancarios = (id: string, rut: string, banco: string, cuenta: string) => {
+    setSolicitudes((prev) => prev.map((solicitud) => {
+      if (solicitud.id !== id) return solicitud;
+
+      return {
+        ...solicitud,
+        cliente: {
+          ...solicitud.cliente,
+          rut: rut || solicitud.cliente.rut,
+          banco,
+          cuenta
+        }
+      };
+    }));
+  };
+
   const evaluarSolicitud = (id: string, decisiones: Record<string, string>) => {
     setSolicitudes((prev) => prev.map((solicitud) => {
       if (solicitud.id !== id) return solicitud;
@@ -119,7 +136,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ sesion, solicitudes, cuentas, login, registrarCuenta, logout, crearSolicitud, cancelarSolicitud, evaluarSolicitud, inspeccionarSolicitud, pagarSolicitud }}>
+    <AppContext.Provider value={{ sesion, solicitudes, cuentas, login, registrarCuenta, logout, crearSolicitud, cancelarSolicitud, actualizarDatosBancarios, evaluarSolicitud, inspeccionarSolicitud, pagarSolicitud }}>
       {children}
     </AppContext.Provider>
   );
