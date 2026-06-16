@@ -1,110 +1,74 @@
-import { useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { AppProvider, useAppContext } from './context/AppContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login/Login';
 import CrearSolicitud from './pages/Cliente/CrearSolicitud';
 import DetalleSolicitud from './pages/Cliente/DetalleSolicitud';
 import MisDevoluciones from './pages/Cliente/MisDevoluciones';
 import DashboardSolicitudes from './pages/ServicioCliente/DashboardSolicitudes';
 import EvaluarSolicitud from './pages/ServicioCliente/EvaluarSolicitud';
+import ResumenSolicitud from './pages/ServicioCliente/ResumenSolicitud';
 import SearchScreen from './pages/InspectorCalidad/SearchScreen';
-import InspectionScreen from './pages/InspectorCalidad/InspectionScreen';
-import { initialDatabase, type Solicitud } from './pages/InspectorCalidad/mockData';
+import InspectionScreenWrapper from './pages/InspectorCalidad/InspectionScreenWrapper';
 import BandejaPagos from './pages/EjecutivoPagos/BandejaPagos';
 import ProcesarPago from './pages/EjecutivoPagos/ProcesarPago';
 
-function VistaConBotonInicio({ children }: { children: React.ReactNode }) {
+function AuthedLayout() {
 	const location = useLocation();
 	const navigate = useNavigate();
+	const { logout, sesion } = useAppContext();
 
 	if (location.pathname === '/') {
-		return children;
+		return <Outlet />;
 	}
 
 	return (
-		<div className="relative">
-			<button
-				onClick={() => navigate('/')}
-				className="fixed bottom-4 left-4 z-50 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-gray-700 shadow-lg ring-1 ring-gray-200 hover:bg-gray-50 hover:text-blue-600"
-			>
-				← Volver al selector de rol
-			</button>
-			{children}
+		<div className="min-h-screen bg-slate-50">
+			<header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+				<div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+					<div>
+						<p className="text-xs uppercase tracking-[0.2em] text-slate-500">Logística PMV</p>
+						<p className="text-sm font-semibold text-slate-800">Rol activo: {sesion?.rol ?? 'sin sesión'}</p>
+					</div>
+					<button
+						onClick={() => {
+							logout();
+							navigate('/');
+						}}
+						className="rounded-full bg-rose-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700"
+					>
+						Cerrar sesión
+					</button>
+				</div>
+			</header>
+			<Outlet />
 		</div>
 	);
 }
 
-function ServicioClientePage() {
-	return <DashboardSolicitudes />;
-}
-
-function InspectorCalidadPage() {
-	const [baseDatos, setBaseDatos] = useState<Record<string, Solicitud>>(initialDatabase);
-	const [solicitudActual, setSolicitudActual] = useState<string | null>(null);
-	const [toast, setToast] = useState<string | null>(null);
-
-	const mostrarToast = (mensaje: string) => {
-		setToast(mensaje);
-		window.setTimeout(() => setToast(null), 2500);
-	};
-
-	const handleSearch = (codigo: string) => {
-		const solicitud = baseDatos[codigo];
-
-		if (!solicitud) {
-			return { found: false, error: 'No se encontró una solicitud con ese código.' };
-		}
-
-		setSolicitudActual(codigo);
-		return { found: true };
-	};
-
-	const handleFinalizar = (updated: Solicitud) => {
-		setBaseDatos((prev) => ({ ...prev, [updated.id_solicitud]: updated }));
-		setSolicitudActual(null);
-		mostrarToast('Inspección finalizada correctamente.');
-	};
-
-	if (solicitudActual) {
-		return (
-			<div>
-				{toast && (
-					<div className="fixed top-4 right-4 z-50 rounded-xl bg-slate-900 text-white px-4 py-3 shadow-lg">
-						{toast}
-					</div>
-				)}
-				<InspectionScreen
-					solicitud={baseDatos[solicitudActual]}
-					onFinalizar={handleFinalizar}
-					onBack={() => setSolicitudActual(null)}
-				/>
-			</div>
-		);
-	}
-
-	return <SearchScreen onSearch={handleSearch} showToast={mostrarToast} />;
-}
-
-function EjecutivoPagosPage() {
-	return <BandejaPagos />;
-}
-
 function App() {
 	return (
-		<BrowserRouter>
-			<Routes>
-				<Route path="/" element={<Login />} />
-				<Route path="/cliente" element={<Navigate to="/cliente/mis-devoluciones" replace />} />
-				<Route path="/cliente/mis-devoluciones" element={<VistaConBotonInicio><MisDevoluciones /></VistaConBotonInicio>} />
-				<Route path="/cliente/crear-solicitud" element={<VistaConBotonInicio><CrearSolicitud /></VistaConBotonInicio>} />
-				<Route path="/cliente/devoluciones/:idSolicitud" element={<VistaConBotonInicio><DetalleSolicitud /></VistaConBotonInicio>} />
-				<Route path="/servicio-cliente" element={<VistaConBotonInicio><ServicioClientePage /></VistaConBotonInicio>} />
-				<Route path="/servicio-cliente/:idSolicitud" element={<VistaConBotonInicio><EvaluarSolicitud /></VistaConBotonInicio>} />
-				<Route path="/inspector-calidad" element={<VistaConBotonInicio><InspectorCalidadPage /></VistaConBotonInicio>} />
-				<Route path="/ejecutivo-pagos" element={<VistaConBotonInicio><EjecutivoPagosPage /></VistaConBotonInicio>} />
-				<Route path="/ejecutivo-pagos/:idSolicitud" element={<VistaConBotonInicio><ProcesarPago /></VistaConBotonInicio>} />
-				<Route path="*" element={<Navigate to="/" replace />} />
-			</Routes>
-		</BrowserRouter>
+		<AppProvider>
+			<BrowserRouter>
+				<Routes>
+					<Route path="/" element={<Login />} />
+					<Route element={<AuthedLayout />}>
+						<Route path="cliente" element={<ProtectedRoute rolRequerido="cliente"><Navigate to="/cliente/mis-devoluciones" replace /></ProtectedRoute>} />
+						<Route path="cliente/mis-devoluciones" element={<ProtectedRoute rolRequerido="cliente"><MisDevoluciones /></ProtectedRoute>} />
+						<Route path="cliente/crear-solicitud" element={<ProtectedRoute rolRequerido="cliente"><CrearSolicitud /></ProtectedRoute>} />
+						<Route path="cliente/devoluciones/:idSolicitud" element={<ProtectedRoute rolRequerido="cliente"><DetalleSolicitud /></ProtectedRoute>} />
+						<Route path="servicio-cliente" element={<ProtectedRoute rolRequerido="servicio_cliente"><DashboardSolicitudes /></ProtectedRoute>} />
+						<Route path="servicio-cliente/:idSolicitud" element={<ProtectedRoute rolRequerido="servicio_cliente"><EvaluarSolicitud /></ProtectedRoute>} />
+						<Route path="servicio-cliente/resumen/:idSolicitud" element={<ProtectedRoute rolRequerido="servicio_cliente"><ResumenSolicitud /></ProtectedRoute>} />
+						<Route path="inspector-calidad" element={<ProtectedRoute rolRequerido="inspector"><SearchScreen /></ProtectedRoute>} />
+						<Route path="inspector-calidad/inspeccion/:id" element={<ProtectedRoute rolRequerido="inspector"><InspectionScreenWrapper /></ProtectedRoute>} />
+						<Route path="ejecutivo-pagos" element={<ProtectedRoute rolRequerido="ejecutivo_pagos"><BandejaPagos /></ProtectedRoute>} />
+						<Route path="ejecutivo-pagos/:idSolicitud" element={<ProtectedRoute rolRequerido="ejecutivo_pagos"><ProcesarPago /></ProtectedRoute>} />
+					</Route>
+					<Route path="*" element={<Navigate to="/" replace />} />
+				</Routes>
+			</BrowserRouter>
+		</AppProvider>
 	);
 }
 

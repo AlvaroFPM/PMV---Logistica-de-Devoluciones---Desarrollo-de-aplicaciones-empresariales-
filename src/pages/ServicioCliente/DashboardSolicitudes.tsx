@@ -1,30 +1,28 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../../context/AppContext';
 
-// 1. Simulamos una base de datos de solicitudes
-const solicitudesDB = [
-  { id: 'SOL-8891', cliente: 'María López', fechaSolicitud: '2026-06-01', items: 1, estado: 'Pendiente', diasParaExpirar: 0, monto: '$150.000' }, // ¡A punto de expirar!
-  { id: 'SOL-8890', cliente: 'Juan Pérez', fechaSolicitud: '2026-06-03', items: 2, estado: 'Pendiente', diasParaExpirar: 2, monto: '$850.000' },
-  { id: 'SOL-8893', cliente: 'Ana Silva', fechaSolicitud: '2026-06-02', items: 1, estado: 'Pendiente', diasParaExpirar: 5, monto: '$45.000' },
-  { id: 'SOL-8892', cliente: 'Carlos Ruiz', fechaSolicitud: '2026-05-28', items: 3, estado: 'Completado', diasParaExpirar: null, monto: '$1.200.000' },
-  { id: 'SOL-8894', cliente: 'Pedro Gómez', fechaSolicitud: '2026-05-25', items: 1, estado: 'Completado', diasParaExpirar: null, monto: '$30.000' },
-];
+const calcularDiasSLA = (fechaCreacion: string) => {
+  const hoy = new Date();
+  const creacion = new Date(fechaCreacion);
+  const diferenciaDias = Math.floor((hoy.getTime() - creacion.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(1, 7 - diferenciaDias);
+};
 
 export default function DashboardSolicitudes() {
   const navigate = useNavigate();
-  // Estado para controlar qué pestaña está activa
+  const { solicitudes } = useAppContext();
   const [pestanaActiva, setPestanaActiva] = useState<'Pendiente' | 'Completado'>('Pendiente');
 
-  // 2. Lógica de Filtrado y Ordenamiento
-  const solicitudesFiltradas = solicitudesDB
-    .filter(solicitud => solicitud.estado === pestanaActiva)
+  const solicitudesPendientes = solicitudes.filter((solicitud) => solicitud.estado === 'Creada' || solicitud.estado === 'En Revisión');
+  const solicitudesCompletadas = solicitudes.filter((solicitud) => solicitud.estado !== 'Creada' && solicitud.estado !== 'En Revisión');
+
+  const solicitudesFiltradas = (pestanaActiva === 'Pendiente' ? solicitudesPendientes : solicitudesCompletadas)
     .sort((a, b) => {
-      // Si estamos en pendientes, ordenamos de menor a mayor días para expirar (los más urgentes primero)
       if (pestanaActiva === 'Pendiente') {
         return (a.diasParaExpirar ?? 999) - (b.diasParaExpirar ?? 999);
       }
-      // Si son completados, ordenamos por fecha (simulado aquí de forma sencilla)
-      return b.id.localeCompare(a.id); 
+      return b.fechaCreacion.localeCompare(a.fechaCreacion);
     });
 
   return (
@@ -48,7 +46,7 @@ export default function DashboardSolicitudes() {
         >
           Pendientes de Evaluación
           <span className="ml-2 bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs">
-            {solicitudesDB.filter(s => s.estado === 'Pendiente').length}
+            {solicitudesPendientes.length}
           </span>
         </button>
         <button
@@ -87,16 +85,19 @@ export default function DashboardSolicitudes() {
             ) : (
               solicitudesFiltradas.map((solicitud) => {
                 // Lógica visual para la urgencia
-                const esUrgente = solicitud.diasParaExpirar !== null && solicitud.diasParaExpirar <= 1;
-                const estaAlLimite = solicitud.diasParaExpirar === 2;
+                const diasParaExpirar = solicitud.diasParaExpirar ?? calcularDiasSLA(solicitud.fechaCreacion);
+                const esUrgente = diasParaExpirar !== null && diasParaExpirar <= 1;
+                const estaAlLimite = diasParaExpirar === 2;
+                const totalItems = solicitud.items.length;
+                const monto = solicitud.items.reduce((total, item) => total + item.precio, 0);
 
                 return (
                   <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4 font-medium text-gray-900">{solicitud.id}</td>
-                    <td className="p-4 text-gray-700">{solicitud.cliente}</td>
-                    <td className="p-4 text-gray-500 text-sm">{solicitud.fechaSolicitud}</td>
-                    <td className="p-4 text-gray-500 text-sm">{solicitud.items}</td>
-                    <td className="p-4 text-gray-700 font-medium">{solicitud.monto}</td>
+                    <td className="p-4 text-gray-700">{solicitud.cliente.nombre}</td>
+                    <td className="p-4 text-gray-500 text-sm">{solicitud.fechaCreacion}</td>
+                    <td className="p-4 text-gray-500 text-sm">{totalItems}</td>
+                    <td className="p-4 text-gray-700 font-medium">${monto.toLocaleString('es-CL')}</td>
                     
                     {/* COLUMNA DE SLA / URGENCIA */}
                     <td className="p-4">
@@ -108,7 +109,7 @@ export default function DashboardSolicitudes() {
                         }`}>
                           {esUrgente ? '🔥 Vence Hoy/Mañana' : 
                            estaAlLimite ? '⚠️ Cerca de vencer' : 
-                           `⏳ Quedan ${solicitud.diasParaExpirar} días`}
+                           `⏳ Quedan ${diasParaExpirar ?? 0} días`}
                         </span>
                       ) : (
                         <span className="text-gray-400 text-sm">Resuelta</span>
@@ -125,7 +126,10 @@ export default function DashboardSolicitudes() {
                           Evaluar Caso
                         </button>
                       ) : (
-                        <button className="text-gray-500 hover:text-gray-700 underline text-sm font-medium">
+                        <button
+                          className="text-gray-500 hover:text-gray-700 underline text-sm font-medium"
+                          onClick={() => navigate(`/servicio-cliente/resumen/${solicitud.id}`)}
+                        >
                           Ver Resumen
                         </button>
                       )}

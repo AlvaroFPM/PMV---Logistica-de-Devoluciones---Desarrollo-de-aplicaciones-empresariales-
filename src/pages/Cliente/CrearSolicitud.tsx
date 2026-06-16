@@ -1,9 +1,8 @@
-// src/pages/Cliente/CrearSolicitud.tsx
-
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import { TarjetaProductoDevolucion } from '../../components/TarjetaProductoDevolucion';
-import type { ItemFormState, SolicitudDevolucion } from '../../types/devolucion';
+import { useAppContext } from '../../context/AppContext';
+import type { ItemFormState, SolicitudMaestra } from '../../types/devolucion';
 
 // Datos simulados de la orden de compra
 const productosOrden = [
@@ -12,11 +11,13 @@ const productosOrden = [
   { id: 'PROD-003', nombre: 'Teclado Digital Casio CT-S1', precio: 120000 }
 ];
 
-// Simulamos que la raqueta (PROD-002) ya tiene un caso abierto
-const productosBloqueados = ['PROD-002'];
-
 export default function CrearSolicitud() {
   const navigate = useNavigate();
+  const { crearSolicitud, solicitudes, sesion } = useAppContext();
+
+  const productosBloqueados = productosOrden
+    .filter((producto) => solicitudes.some((solicitud) => solicitud.items.some((item) => item.nombreProducto === producto.nombre && !solicitud.estado.startsWith('Cancelada'))))
+    .map((producto) => producto.id);
 
   // Inicialización perezosa (Lazy Initialization)
   const [formItems, setFormItems] = useState<Record<string, ItemFormState>>(() => {
@@ -77,30 +78,31 @@ export default function CrearSolicitud() {
       return;
     }
 
-    // 1. Leer el historial existente
-    const historialExistente = localStorage.getItem('solicitudes_devolucion');
-    const solicitudes: SolicitudDevolucion[] = historialExistente ? JSON.parse(historialExistente) : [];
-
-    // 2. Construir la nueva solicitud
-    const nuevaSolicitud: SolicitudDevolucion = {
-      id: `DEV-2026-${Math.floor(100 + Math.random() * 900)}`, // ID Único simulado
-      idOrdenCompra: 'OC-2026-771', 
-      fechaCreacion: new Date().toISOString().split('T')[0], // Formato YYYY-MM-DD
+    const nuevaSolicitud: SolicitudMaestra = {
+      id: `DEV-2026-${Math.floor(100 + Math.random() * 900)}`,
+      idOrdenCompra: 'OC-2026-771',
+      fechaCreacion: new Date().toISOString().split('T')[0],
       estado: 'Creada',
+      cliente: {
+        nombre: sesion?.nombre ?? 'Cliente Demo',
+        rut: 'N/A',
+        banco: 'Pendiente',
+        cuenta: 'Pendiente'
+      },
+      costoEnvioOriginal: 15000,
+      objetos_equivocados: [],
       items: itemsSeleccionados.map(([id, estado]) => ({
         id,
-        nombreProducto: productosOrden.find(p => p.id === id)?.nombre || 'Producto',
+        nombreProducto: productosOrden.find((p) => p.id === id)?.nombre || 'Producto',
+        precio: productosOrden.find((p) => p.id === id)?.precio || 0,
         motivo: estado.motivo,
-        evidencia: estado.evidencia, // Ya es un string, no necesitamos .name
-        estado: 'Pendiente'
+        evidencia: estado.evidencia,
+        estado: 'Pendiente',
+        n_serie: 'N/A'
       }))
     };
 
-    // 3 y 4. Guardar en localStorage
-    solicitudes.push(nuevaSolicitud);
-    localStorage.setItem('solicitudes_devolucion', JSON.stringify(solicitudes));
-
-    // 5. Redireccionar al usuario
+    crearSolicitud(nuevaSolicitud);
     alert(`Solicitud ${nuevaSolicitud.id} creada con éxito.`);
     navigate('/cliente/mis-devoluciones');
   };
@@ -152,6 +154,7 @@ export default function CrearSolicitud() {
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
+              onClick={() => navigate('/cliente/mis-devoluciones')}
               className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
               Cancelar

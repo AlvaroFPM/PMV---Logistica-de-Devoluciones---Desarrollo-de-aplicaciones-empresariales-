@@ -23,6 +23,7 @@ const MAPA_ESTADOS_ESTILOS: Record<EstadoPermitido, string> = {
   'Cancelada — Plazo de Envío Expirado': 'bg-rose-900 text-rose-100 border-rose-950',
   'Cancelada — Plazo Bancario Expirado': 'bg-rose-900 text-rose-100 border-rose-950',
   'Cancelada por el Cliente': 'bg-rose-900 text-rose-100 border-rose-950',
+  'Rechazada por Inconsistencia Física': 'bg-rose-900 text-rose-100 border-rose-950',
 
   // Estados Ítem
   'Pendiente': 'bg-gray-100 text-gray-700 border-gray-300',

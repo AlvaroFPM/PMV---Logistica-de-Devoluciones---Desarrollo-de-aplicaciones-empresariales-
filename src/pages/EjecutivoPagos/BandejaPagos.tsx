@@ -1,46 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Simulamos la base de datos de solicitudes pendientes de pago
-const pendientesMock = [
-  {
-    id: 'SOL-999',
-    cliente: 'María González',
-    montoTotal: 1200000,
-    fechaAprobacion: '2026-06-05',
-    estado: 'Pendiente Total', // Todo aprobado, falta pagar todo
-    diasEsperando: 2, // SLA: Bien
-  },
-  {
-    id: 'SOL-852',
-    cliente: 'Pedro Sánchez',
-    montoTotal: 45000,
-    fechaAprobacion: '2026-05-28',
-    estado: 'Pendiente Parcial', // Tiene ítems pagados y otros en cuarentena
-    diasEsperando: 10, // SLA: ¡Crítico!
-  },
-  {
-    id: 'SOL-774',
-    cliente: 'Camila Rojas',
-    montoTotal: 350000,
-    fechaAprobacion: '2026-06-01',
-    estado: 'Pendiente Total',
-    diasEsperando: 6, // SLA: Alerta
-  }
-];
+import { useAppContext } from '../../context/AppContext';
 
 export default function BandejaPagos() {
   const navigate = useNavigate();
+  const { solicitudes } = useAppContext();
   
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
   const [orden, setOrden] = useState<string>('fecha-asc'); // fecha-asc, fecha-desc, id-asc
 
-  // Lógica de Filtrado y Ordenamiento
-  const solicitudesFiltradas = pendientesMock
-    .filter(sol => filtroEstado === 'Todos' || sol.estado === filtroEstado)
+  const pendientesGlobales = solicitudes.filter((solicitud) => solicitud.estado === 'Pendiente de Reembolso' || solicitud.estado === 'En Resolución Parcial');
+
+  const solicitudesFiltradas = pendientesGlobales
+    .filter((sol) => filtroEstado === 'Todos' || sol.estado === filtroEstado)
     .sort((a, b) => {
-      if (orden === 'fecha-asc') return a.diasEsperando - b.diasEsperando; // Los que llevan más tiempo esperando (urgentes) primero
-      if (orden === 'fecha-desc') return b.diasEsperando - a.diasEsperando; // Más recientes primero
+      if (orden === 'fecha-asc') return (a.diasParaExpirar ?? 999) - (b.diasParaExpirar ?? 999);
+      if (orden === 'fecha-desc') return (b.diasParaExpirar ?? 999) - (a.diasParaExpirar ?? 999);
       if (orden === 'id-asc') return a.id.localeCompare(b.id);
       return 0;
     });
@@ -64,8 +39,8 @@ export default function BandejaPagos() {
             onChange={(e) => setFiltroEstado(e.target.value)}
           >
             <option value="Todos">Todos los pendientes</option>
-            <option value="Pendiente Total">Pendiente Total</option>
-            <option value="Pendiente Parcial">Pendiente Parcial (Desacoplados)</option>
+            <option value="Pendiente de Reembolso">Pendiente de Reembolso</option>
+            <option value="En Resolución Parcial">En Resolución Parcial</option>
           </select>
         </div>
 
@@ -105,32 +80,37 @@ export default function BandejaPagos() {
               solicitudesFiltradas.map(sol => (
                 <tr key={sol.id} className="hover:bg-gray-50 transition-colors">
                   <td className="p-4 font-bold text-gray-800">{sol.id}</td>
-                  <td className="p-4 text-gray-700">{sol.cliente}</td>
+                  <td className="p-4 text-gray-700">{sol.cliente.nombre}</td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      sol.estado === 'Pendiente Total' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
+                      sol.estado === 'Pendiente de Reembolso' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
                     }`}>
                       {sol.estado}
                     </span>
                   </td>
                   <td className="p-4">
-                    {/* Lógica Visual de Urgencia (SLA) */}
-                    {sol.diasEsperando >= 8 ? (
-                      <span className="flex items-center gap-1 text-red-600 font-bold text-sm">
-                        ⚠️ {sol.diasEsperando} días (Crítico)
-                      </span>
-                    ) : sol.diasEsperando >= 5 ? (
-                      <span className="flex items-center gap-1 text-yellow-600 font-bold text-sm">
-                        ⏳ {sol.diasEsperando} días (Alerta)
-                      </span>
+                    {sol.diasParaExpirar !== null && sol.diasParaExpirar !== undefined ? (
+                      sol.diasParaExpirar <= 1 ? (
+                        <span className="flex items-center gap-1 text-red-600 font-bold text-sm">
+                          ⚠️ {sol.diasParaExpirar} días (Crítico)
+                        </span>
+                      ) : sol.diasParaExpirar <= 3 ? (
+                        <span className="flex items-center gap-1 text-yellow-600 font-bold text-sm">
+                          ⏳ {sol.diasParaExpirar} días (Alerta)
+                        </span>
+                      ) : (
+                        <span className="text-green-600 font-medium text-sm">
+                          {sol.diasParaExpirar} días (A tiempo)
+                        </span>
+                      )
                     ) : (
-                      <span className="text-green-600 font-medium text-sm">
-                        {sol.diasEsperando} días (A tiempo)
+                      <span className="text-gray-400 text-sm">
+                        Sin SLA definido
                       </span>
                     )}
                   </td>
                   <td className="p-4 font-bold text-gray-800 text-right">
-                    ${sol.montoTotal.toLocaleString('es-CL')}
+                    ${sol.items.reduce((total, item) => total + item.precio, 0).toLocaleString('es-CL')}
                   </td>
                   <td className="p-4 text-center">
                     <button 

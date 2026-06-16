@@ -1,9 +1,9 @@
-import type { Item, EstadoInspeccion } from './mockData';
-import { OPCIONES_INSPECCION } from './mockData';
+import type { ItemInspeccion, EstadoInspeccion } from '../../types/devolucion';
+import { OPCIONES_INSPECCION } from '../../types/devolucion';
 import { Tag, Hash, ChevronDown } from 'lucide-react';
 
 interface ItemCardProps {
-  item: Item;
+  item: ItemInspeccion;
   onChange: (id: string, estado: EstadoInspeccion) => void;
 }
 

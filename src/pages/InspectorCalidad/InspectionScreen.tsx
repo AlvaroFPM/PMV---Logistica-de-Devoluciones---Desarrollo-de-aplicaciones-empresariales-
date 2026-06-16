@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { ArrowLeft, User, ClipboardCheck, Plus, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
-import type { Solicitud, Item, EstadoInspeccion, ObjetoEquivocado } from './mockData';
+import type { SolicitudInspeccion, ItemInspeccion, EstadoInspeccion, ObjetoEquivocado } from '../../types/devolucion';
 import ItemCard from './ItemCard';
 import ObjetoEquivocadoModal from './ObjetoEquivocadoModal';
 
 interface InspectionScreenProps {
-  solicitud: Solicitud;
-  onFinalizar: (updated: Solicitud) => void;
+  solicitud: SolicitudInspeccion;
+  onFinalizar: (updated: SolicitudInspeccion) => void;
   onBack: () => void;
 }
 
@@ -17,7 +17,7 @@ const estadoBadgeStyle: Record<string, string> = {
 };
 
 export default function InspectionScreen({ solicitud, onFinalizar, onBack }: InspectionScreenProps) {
-  const [items, setItems] = useState<Item[]>(solicitud.items);
+  const [items, setItems] = useState<ItemInspeccion[]>(solicitud.items);
   const [objetos, setObjetos] = useState<ObjetoEquivocado[]>(solicitud.objetos_equivocados);
   const [showModal, setShowModal] = useState(false);
 

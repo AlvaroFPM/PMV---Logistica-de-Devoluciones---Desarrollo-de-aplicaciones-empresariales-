@@ -1,8 +1,7 @@
-// src/pages/Cliente/DetalleSolicitud.tsx
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
-import type { SolicitudDevolucion, EstadoMaestro } from '../../types/devolucion';
+import { useAppContext } from '../../context/AppContext';
+import type { EstadoMaestro } from '../../types/devolucion';
 
 // COMPONENTE AUXILIAR: Timeline de Progreso
 const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => {
@@ -41,13 +40,8 @@ const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => 
 export default function DetalleSolicitud() {
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
-
-  // LECTURA DESDE LA FUENTE ÚNICA DE VERDAD (localStorage)
-  const dataLocal = localStorage.getItem('solicitudes_devolucion');
-  const historial: SolicitudDevolucion[] = dataLocal ? JSON.parse(dataLocal) : [];
-  
-  // Buscamos la solicitud específica
-  const solicitud = historial.find(s => s.id === idSolicitud) || null;
+  const { solicitudes, cancelarSolicitud } = useAppContext();
+  const solicitud = solicitudes.find((s) => s.id === idSolicitud) || null;
 
   if (!solicitud) {
     return (
@@ -61,9 +55,10 @@ export default function DetalleSolicitud() {
     );
   }
 
-  const { id, idOrdenCompra, fechaCreacion, estado, items } = solicitud;
-  const itemsAprobados = items.filter(i => i.estado.includes('Aprobado'));
-  const montoAprobado = itemsAprobados.length * 25000;
+  const { id, idOrdenCompra, fechaCreacion, estado, items, cliente, costoEnvioOriginal } = solicitud;
+  const itemsAprobados = items.filter((item) => item.estado.includes('Aprobado'));
+  const montoAprobado = itemsAprobados.reduce((total, item) => total + item.precio, 0);
+  const puedeCancelar = !estado.startsWith('Cancelada') && estado !== 'Finalizada con Éxito';
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans pb-20">
@@ -78,7 +73,7 @@ export default function DetalleSolicitud() {
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
               Solicitud {id}
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 text-sm mt-1">
               Orden Original: <span className="font-mono text-gray-700">{idOrdenCompra}</span> • Creada el {fechaCreacion}
             </p>
           </div>
@@ -86,6 +81,21 @@ export default function DetalleSolicitud() {
             <BadgeEstado estado={estado} />
           </div>
         </header>
+
+        {puedeCancelar && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                cancelarSolicitud(id);
+                alert('La devolución fue cancelada.');
+                navigate('/cliente/mis-devoluciones');
+              }}
+              className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+            >
+              Cancelar devolución
+            </button>
+          </div>
+        )}
 
         {/* Banner de Resolución Parcial (RN7) */}
         {estado === 'En Resolución Parcial' && (
@@ -121,6 +131,17 @@ export default function DetalleSolicitud() {
             </div>
           </div>
         )}
+
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Datos del cliente</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+            <p><span className="font-semibold">Nombre:</span> {cliente.nombre}</p>
+            <p><span className="font-semibold">RUT:</span> {cliente.rut}</p>
+            <p><span className="font-semibold">Banco:</span> {cliente.banco}</p>
+            <p><span className="font-semibold">Cuenta:</span> {cliente.cuenta}</p>
+            <p><span className="font-semibold">Costo envío original:</span> ${costoEnvioOriginal.toLocaleString('es-CL')}</p>
+          </div>
+        </div>
 
         {/* Listado Maestro-Detalle */}
         <div className="space-y-4">
@@ -172,7 +193,14 @@ export default function DetalleSolicitud() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <button className="w-full text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:text-red-600 py-2 rounded transition-colors">
+                    <button
+                      onClick={() => {
+                        cancelarSolicitud(id);
+                        alert('La devolución fue cancelada.');
+                        navigate('/cliente/mis-devoluciones');
+                      }}
+                      className="w-full text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:text-red-600 py-2 rounded transition-colors"
+                    >
                       Cancelar devolución
                     </button>
                   </div>

@@ -1,25 +1,32 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Package, X, AlertCircle } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 
-interface SearchScreenProps {
-  onSearch: (codigo: string) => { found: boolean; error?: string };
-  showToast: (message: string) => void;
-}
-
-export default function SearchScreen({ onSearch, showToast }: SearchScreenProps) {
+export default function SearchScreen() {
   const [codigo, setCodigo] = useState('');
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [notas, setNotas] = useState('');
+  const navigate = useNavigate();
+  const { solicitudes } = useAppContext();
 
   const handleSearch = () => {
     if (!codigo.trim()) {
       setError('Ingresa un código de solicitud.');
       return;
     }
-    const result = onSearch(codigo.trim().toUpperCase());
-    if (!result.found) {
-      setError(result.error || 'No encontrado.');
+
+    const encontrada = solicitudes.find((solicitud) => solicitud.id === codigo.trim().toUpperCase());
+
+    if (encontrada) {
+      if (encontrada.estado !== 'En Inspección Física' && encontrada.estado !== 'En Tránsito') {
+        setError(`Solicitud encontrada, pero su estado actual es "${encontrada.estado}". No apta para inspección ahora mismo.`);
+      } else {
+        navigate(`/inspector-calidad/inspeccion/${encontrada.id}`);
+      }
+    } else {
+      setError('No encontrado en el sistema.');
     }
   };
 
@@ -28,7 +35,7 @@ export default function SearchScreen({ onSearch, showToast }: SearchScreenProps)
   };
 
   const handleGuardarPaquete = () => {
-    showToast('Paquete no identificado registrado exitosamente.');
+    alert('Paquete no identificado registrado exitosamente.');
     setNotas('');
     setShowModal(false);
   };

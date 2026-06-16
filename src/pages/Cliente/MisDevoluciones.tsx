@@ -1,44 +1,12 @@
-// src/pages/Cliente/MisDevoluciones.tsx
-
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
-import type { SolicitudDevolucion } from '../../types/devolucion';
-
-// MOCK INICIAL: Para que el profesor vea datos la primera vez que abre la app
-const mockInicial: SolicitudDevolucion[] = [
-  {
-    id: 'DEV-2026-085',
-    idOrdenCompra: 'OC-2026-771',
-    fechaCreacion: '2026-05-20',
-    estado: 'En Resolución Parcial',
-    items: []
-  },
-  {
-    id: 'DEV-2026-042',
-    idOrdenCompra: 'OC-2026-550',
-    fechaCreacion: '2026-04-15',
-    estado: 'Finalizada con Éxito',
-    items: []
-  }
-];
+import { useAppContext } from '../../context/AppContext';
 
 export default function MisDevoluciones() {
   const navigate = useNavigate();
-  const [historialSolicitudes, setHistorialSolicitudes] = useState<SolicitudDevolucion[]>([]);
+  const { solicitudes, sesion } = useAppContext();
 
-  // Efecto para cargar los datos persistidos al montar el componente
-  useEffect(() => {
-    const dataLocal = localStorage.getItem('solicitudes_devolucion');
-    if (dataLocal) {
-      // Si hay datos, los cargamos
-      setHistorialSolicitudes(JSON.parse(dataLocal));
-    } else {
-      // Si no hay datos (primera vez), guardamos el mock inicial y lo mostramos
-      localStorage.setItem('solicitudes_devolucion', JSON.stringify(mockInicial));
-      setHistorialSolicitudes(mockInicial);
-    }
-  }, []);
+  const historialSolicitudes = solicitudes.filter((solicitud) => !sesion || sesion.rol !== 'cliente' || solicitud.cliente.nombre === sesion.nombre);
 
   if (historialSolicitudes.length === 0) {
     return (
