@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Simulamos los datos con URLs de imágenes falsas para probar el zoom
 const solicitudMock = {
@@ -38,12 +39,15 @@ const solicitudMock = {
   ]
 };
 
-export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?: string; onBack?: () => void }) {
+export default function EvaluarSolicitud() {
+  const navigate = useNavigate();
+  const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const [itemExpandido, setItemExpandido] = useState<string | null>(null);
   const [decisiones, setDecisiones] = useState<Record<string, string>>({});
   
   // NUEVO ESTADO: Controla qué imagen se está mostrando en grande (null significa que el modal está cerrado)
   const [imagenZoom, setImagenZoom] = useState<string | null>(null);
+  const solicitudId = idSolicitud ?? solicitudMock.id;
 
   const toggleExpandir = (id: string) => {
     setItemExpandido(itemExpandido === id ? null : id);
@@ -66,7 +70,7 @@ export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?
     // 1. Armamos el objeto tal como lo exige el Backend
     const payload = {
       agenteId: "AGENTE-001", // Simulado por ahora
-      solicitudId: solicitudMock.id,
+      solicitudId,
       evaluacionItems: Object.entries(decisiones).map(([id, decision]) => ({
         itemId: id,
         // Formateamos el texto de la UI a un código de Base de Datos
@@ -85,16 +89,14 @@ export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen relative">
       {/* Botón volver a la lista */}
-      {onBack && (
-        <div className="mb-4">
-          <button onClick={onBack} className="text-sm text-blue-600 hover:underline">← Volver</button>
-        </div>
-      )}
+      <div className="mb-4">
+        <button onClick={() => navigate('/servicio-cliente')} className="text-sm text-blue-600 hover:underline">← Volver</button>
+      </div>
       
       {/* HEADER DE LA SOLICITUD */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Solicitud: {solicitudId ?? solicitudMock.id}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Solicitud: {solicitudId}</h1>
           <p className="text-gray-500 mt-1">Cliente: {solicitudMock.cliente}</p>
           <div className="flex gap-4 mt-3 text-sm">
             <span className="bg-gray-100 px-3 py-1 rounded-md">Fecha Compra: {solicitudMock.fechaCompra}</span>

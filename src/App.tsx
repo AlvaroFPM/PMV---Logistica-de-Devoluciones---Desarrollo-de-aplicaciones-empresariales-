@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Login from './pages/Login/Login';
 import CrearSolicitud from './pages/Cliente/CrearSolicitud';
@@ -34,18 +34,7 @@ function VistaConBotonInicio({ children }: { children: React.ReactNode }) {
 }
 
 function ServicioClientePage() {
-	const [solicitudActiva, setSolicitudActiva] = useState<string | null>(null);
-
-	if (solicitudActiva) {
-		return (
-			<EvaluarSolicitud
-				solicitudId={solicitudActiva}
-				onBack={() => setSolicitudActiva(null)}
-			/>
-		);
-	}
-
-	return <DashboardSolicitudes onEvaluar={(id) => setSolicitudActiva(id ?? null)} />;
+	return <DashboardSolicitudes />;
 }
 
 function InspectorCalidadPage() {
@@ -96,41 +85,27 @@ function InspectorCalidadPage() {
 }
 
 function EjecutivoPagosPage() {
-	const [solicitudActiva, setSolicitudActiva] = useState<string | null>(null);
-
-	if (solicitudActiva) {
-		return (
-			<ProcesarPago
-				solicitudId={solicitudActiva}
-				onBack={() => setSolicitudActiva(null)}
-			/>
-		);
-	}
-
-	return <BandejaPagos onProcesar={(id) => setSolicitudActiva(id)} />;
+	return <BandejaPagos />;
 }
 
 function App() {
-	const routes = useMemo(
-		() => (
-			<BrowserRouter>
-				<Routes>
-					<Route path="/" element={<Login />} />
-					<Route path="/cliente" element={<Navigate to="/cliente/mis-devoluciones" replace />} />
-					<Route path="/cliente/mis-devoluciones" element={<VistaConBotonInicio><MisDevoluciones /></VistaConBotonInicio>} />
-					<Route path="/cliente/crear-solicitud" element={<VistaConBotonInicio><CrearSolicitud /></VistaConBotonInicio>} />
-					<Route path="/cliente/devoluciones/:idSolicitud" element={<VistaConBotonInicio><DetalleSolicitud /></VistaConBotonInicio>} />
-					<Route path="/servicio-cliente" element={<VistaConBotonInicio><ServicioClientePage /></VistaConBotonInicio>} />
-					<Route path="/inspector-calidad" element={<VistaConBotonInicio><InspectorCalidadPage /></VistaConBotonInicio>} />
-					<Route path="/ejecutivo-pagos" element={<VistaConBotonInicio><EjecutivoPagosPage /></VistaConBotonInicio>} />
-					<Route path="*" element={<Navigate to="/" replace />} />
-				</Routes>
-			</BrowserRouter>
-		),
-		[]
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route path="/" element={<Login />} />
+				<Route path="/cliente" element={<Navigate to="/cliente/mis-devoluciones" replace />} />
+				<Route path="/cliente/mis-devoluciones" element={<VistaConBotonInicio><MisDevoluciones /></VistaConBotonInicio>} />
+				<Route path="/cliente/crear-solicitud" element={<VistaConBotonInicio><CrearSolicitud /></VistaConBotonInicio>} />
+				<Route path="/cliente/devoluciones/:idSolicitud" element={<VistaConBotonInicio><DetalleSolicitud /></VistaConBotonInicio>} />
+				<Route path="/servicio-cliente" element={<VistaConBotonInicio><ServicioClientePage /></VistaConBotonInicio>} />
+				<Route path="/servicio-cliente/:idSolicitud" element={<VistaConBotonInicio><EvaluarSolicitud /></VistaConBotonInicio>} />
+				<Route path="/inspector-calidad" element={<VistaConBotonInicio><InspectorCalidadPage /></VistaConBotonInicio>} />
+				<Route path="/ejecutivo-pagos" element={<VistaConBotonInicio><EjecutivoPagosPage /></VistaConBotonInicio>} />
+				<Route path="/ejecutivo-pagos/:idSolicitud" element={<VistaConBotonInicio><ProcesarPago /></VistaConBotonInicio>} />
+				<Route path="*" element={<Navigate to="/" replace />} />
+			</Routes>
+		</BrowserRouter>
 	);
-
-	return routes;
 }
 
 export default App;

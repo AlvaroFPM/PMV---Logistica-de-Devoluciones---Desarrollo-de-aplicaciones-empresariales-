@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Simulamos los datos con la complejidad requerida
 const solicitudMock = {
@@ -29,8 +30,11 @@ const solicitudMock = {
   ]
 };
 
-export default function ProcesarPago({ solicitudId, onBack }: { solicitudId?: string; onBack?: () => void }) {
-  const solicitud = { ...solicitudMock, id: solicitudId ?? solicitudMock.id };
+export default function ProcesarPago() {
+  const navigate = useNavigate();
+  const { idSolicitud } = useParams<{ idSolicitud: string }>();
+  const solicitudId = idSolicitud ?? solicitudMock.id;
+  const solicitud = { ...solicitudMock, id: solicitudId };
   // Estado para guardar qué ítems seleccionó el ejecutivo para pagar AHORA
   const [itemsSeleccionados, setItemsSeleccionados] = useState<string[]>([]);
   
@@ -78,11 +82,9 @@ export default function ProcesarPago({ solicitudId, onBack }: { solicitudId?: st
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-800">Módulo de Pagos y Reembolsos</h1>
-        {onBack && (
-          <button onClick={onBack} className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
-            ← Volver a la bandeja
-          </button>
-        )}
+        <button onClick={() => navigate('/ejecutivo-pagos')} className="px-3 py-2 rounded-lg text-sm font-semibold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50">
+          ← Volver a la bandeja
+        </button>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -91,10 +93,10 @@ export default function ProcesarPago({ solicitudId, onBack }: { solicitudId?: st
         <div className="col-span-2 space-y-4">
           
           <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Ítems de la Solicitud: {solicitudMock.id}</h2>
+            <h2 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Ítems de la Solicitud: {solicitud.id}</h2>
             
             <div className="space-y-3">
-              {solicitudMock.items.map(item => (
+              {solicitud.items.map(item => (
                 <label 
                   key={item.id} 
                   className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
@@ -134,13 +136,13 @@ export default function ProcesarPago({ solicitudId, onBack }: { solicitudId?: st
           {/* Tarjeta de Datos Bancarios del Cliente */}
           <div className="bg-blue-900 text-white p-5 rounded-lg shadow-sm">
             <h3 className="text-sm uppercase text-blue-200 font-bold mb-3 tracking-wider">Datos de Transferencia</h3>
-            <p className="font-semibold text-lg">{solicitudMock.cliente}</p>
-            <p className="text-sm text-blue-100 mt-1">RUT: {solicitudMock.rut}</p>
+            <p className="font-semibold text-lg">{solicitud.cliente}</p>
+            <p className="text-sm text-blue-100 mt-1">RUT: {solicitud.rut}</p>
             <div className="mt-4 p-3 bg-blue-800 rounded">
               <p className="text-xs text-blue-200">Banco Destino</p>
-              <p className="font-medium">{solicitudMock.banco}</p>
+              <p className="font-medium">{solicitud.banco}</p>
               <p className="text-xs text-blue-200 mt-2">N° Cuenta</p>
-              <p className="font-medium">{solicitudMock.cuenta}</p>
+              <p className="font-medium">{solicitud.cuenta}</p>
             </div>
           </div>
 

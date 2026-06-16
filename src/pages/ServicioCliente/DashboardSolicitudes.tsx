@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // 1. Simulamos una base de datos de solicitudes
 const solicitudesDB = [
@@ -9,7 +10,8 @@ const solicitudesDB = [
   { id: 'SOL-8894', cliente: 'Pedro Gómez', fechaSolicitud: '2026-05-25', items: 1, estado: 'Completado', diasParaExpirar: null, monto: '$30.000' },
 ];
 
-export default function DashboardSolicitudes({ onEvaluar }: { onEvaluar?: (id: string) => void }) {
+export default function DashboardSolicitudes() {
+  const navigate = useNavigate();
   // Estado para controlar qué pestaña está activa
   const [pestanaActiva, setPestanaActiva] = useState<'Pendiente' | 'Completado'>('Pendiente');
 
@@ -118,7 +120,7 @@ export default function DashboardSolicitudes({ onEvaluar }: { onEvaluar?: (id: s
                       {pestanaActiva === 'Pendiente' ? (
                         <button
                           className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-md text-sm font-semibold transition-colors border border-blue-200 hover:border-blue-600"
-                          onClick={() => onEvaluar?.(solicitud.id)}
+                          onClick={() => navigate(`/servicio-cliente/${solicitud.id}`)}
                         >
                           Evaluar Caso
                         </button>

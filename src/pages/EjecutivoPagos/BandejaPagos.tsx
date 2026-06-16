@@ -1,5 +1,5 @@
 import { useState } from 'react';
-// import { useNavigate } from 'react-router-dom'; // Descomentarás esto cuando conectemos las rutas
+import { useNavigate } from 'react-router-dom';
 
 // Simulamos la base de datos de solicitudes pendientes de pago
 const pendientesMock = [
@@ -29,8 +29,8 @@ const pendientesMock = [
   }
 ];
 
-export default function BandejaPagos({ onProcesar }: { onProcesar?: (id: string) => void }) {
-  // const navigate = useNavigate();
+export default function BandejaPagos() {
+  const navigate = useNavigate();
   
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
   const [orden, setOrden] = useState<string>('fecha-asc'); // fecha-asc, fecha-desc, id-asc
@@ -46,9 +46,7 @@ export default function BandejaPagos({ onProcesar }: { onProcesar?: (id: string)
     });
 
   const irAlDetalle = (id: string) => {
-    if (onProcesar) return onProcesar(id);
-    // En la app real usarías: navigate(`/pagos/${id}`);
-    alert(`Navegando a la vista de detalle de ${id} (ProcesarPago.tsx)`);
+    navigate(`/ejecutivo-pagos/${id}`);
   };
 
   return (
