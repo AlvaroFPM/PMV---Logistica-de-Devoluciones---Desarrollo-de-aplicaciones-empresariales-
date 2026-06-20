@@ -3,6 +3,7 @@ import { ArrowLeft, User, ClipboardCheck, Plus, AlertTriangle, CheckCircle2, Loa
 import type { SolicitudInspeccion, ItemInspeccion, EstadoInspeccion, ObjetoEquivocado } from '../../types/devolucion';
 import ItemCard from './ItemCard';
 import ObjetoEquivocadoModal from './ObjetoEquivocadoModal';
+import { ImageModal } from '../../components/ImageModal';
 
 interface InspectionScreenProps {
   solicitud: SolicitudInspeccion;
@@ -20,6 +21,7 @@ export default function InspectionScreen({ solicitud, onFinalizar, onBack }: Ins
   const [items, setItems] = useState<ItemInspeccion[]>(solicitud.items);
   const [objetos, setObjetos] = useState<ObjetoEquivocado[]>(solicitud.objetos_equivocados);
   const [showModal, setShowModal] = useState(false);
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
   const allInspected = items.every(i => i.estado_inspeccion !== 'Pendiente');
   const pendingCount = items.filter(i => i.estado_inspeccion === 'Pendiente').length;
@@ -28,12 +30,13 @@ export default function InspectionScreen({ solicitud, onFinalizar, onBack }: Ins
     setItems(prev => prev.map(i => i.id === id ? { ...i, estado_inspeccion: estado } : i));
   };
 
-  const handleGuardarObjeto = (tipo: string, descripcion: string, fotoAdjunta: boolean) => {
+  const handleGuardarObjeto = (tipo: string, descripcion: string, fotoAdjunta: boolean, fotoUrl?: string) => {
     const nuevo: ObjetoEquivocado = {
       id: `OBJ-${Date.now()}`,
       tipo,
       descripcion,
       foto_adjunta: fotoAdjunta,
+      foto_url: fotoUrl,
     };
     setObjetos(prev => [...prev, nuevo]);
     setShowModal(false);
@@ -104,7 +107,17 @@ export default function InspectionScreen({ solicitud, onFinalizar, onBack }: Ins
                       <span className="font-bold text-amber-800">{obj.tipo}</span>
                       {obj.descripcion && <span className="text-amber-700"> — {obj.descripcion}</span>}
                       {obj.foto_adjunta && (
-                        <span className="ml-2 text-emerald-600 font-semibold">· foto adjunta</span>
+                        <div className="mt-2 flex flex-col items-start gap-1">
+                          {obj.foto_url && (
+                            <img 
+                              src={obj.foto_url} 
+                              alt="Objeto equivocado" 
+                              className="w-16 h-16 object-cover rounded-md border border-amber-200 cursor-zoom-in hover:opacity-80 transition-opacity" 
+                              onClick={() => setImagenAmpliada(obj.foto_url!)}
+                            />
+                          )}
+                          <span className="text-emerald-600 font-semibold text-xs">✓ foto adjunta</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -178,6 +191,8 @@ export default function InspectionScreen({ solicitud, onFinalizar, onBack }: Ins
           onGuardar={handleGuardarObjeto}
         />
       )}
+
+      {imagenAmpliada && <ImageModal src={imagenAmpliada} onClose={() => setImagenAmpliada(null)} />}
     </>
   );
 }

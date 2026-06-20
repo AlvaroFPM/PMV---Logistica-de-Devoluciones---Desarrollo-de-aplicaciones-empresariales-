@@ -47,7 +47,7 @@ const ORDENES_CLIENTE = [
 
 export default function CrearSolicitud() {
   const navigate = useNavigate();
-  const { crearSolicitud, solicitudes } = useAppContext();
+  const { crearSolicitud, solicitudes, sesion } = useAppContext();
 
   const [idOrdenActiva, setIdOrdenActiva] = useState(ORDENES_CLIENTE[0].id);
   const ordenActual = ORDENES_CLIENTE.find(o => o.id === idOrdenActiva)!;
@@ -134,7 +134,7 @@ export default function CrearSolicitud() {
       idOrdenCompra: idOrdenActiva,
       fechaCreacion: generarFechaActual(), // <--- Llamamos a la función segura
       estado: 'Creada',
-      cliente: { nombre: 'Amaro', rut: '19.123.456-7', banco: 'Banco de Chile', cuenta: '123456789' },
+      cliente: { nombre: sesion?.nombre || 'Desconocido', rut: '', banco: '', cuenta: '' },
       costoEnvioOriginal: 15000,
       objetos_equivocados: [],
       items: itemsSeleccionados.map(([id, estado]) => ({

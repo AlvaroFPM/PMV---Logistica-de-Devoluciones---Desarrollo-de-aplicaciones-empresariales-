@@ -1,12 +1,16 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
+import { ImageModal } from '../../components/ImageModal';
 
 interface ItemConPrecioOpcional {
   id: string;
   precio?: number;
   nombreProducto?: string;
   nombre?: string;
+  descripcion?: string;
+  motivo?: string;
+  evidencia?: string;
 }
 
 const CATALOGO_PRECIOS: Record<string, number> = {
@@ -39,6 +43,7 @@ export default function EvaluarSolicitud() {
   const { solicitudes, evaluarSolicitud } = useAppContext();
   const [itemExpandido, setItemExpandido] = useState<string | null>(null);
   const [decisiones, setDecisiones] = useState<Record<string, string>>({});
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   
   const solicitud = solicitudes.find((item) => item.id === idSolicitud);
 
@@ -148,11 +153,14 @@ export default function EvaluarSolicitud() {
 
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">Evidencia fotográfica</p>
-                      <div className="bg-white p-4 rounded border border-gray-200 overflow-hidden min-h-[180px] flex flex-col justify-center items-center">
-                        <img
-                          src={imgSrc}
-                          alt={`Evidencia`}
-                          className="w-full max-h-48 object-cover rounded"
+                      <div 
+                        className="bg-gray-100 rounded-lg overflow-hidden border border-gray-200 cursor-zoom-in hover:opacity-90 transition-opacity"
+                        onClick={() => setImagenAmpliada(imgSrc)}
+                      >
+                        <img 
+                          src={imgSrc} 
+                          alt={`Evidencia`} 
+                          className="w-full h-32 object-cover"
                         />
                       </div>
                     </div>
@@ -182,6 +190,7 @@ export default function EvaluarSolicitud() {
           {listoParaConfirmar ? 'CONFIRMAR EVALUACIÓN' : 'EVALÚE TODOS LOS ÍTEMS PARA CONTINUAR'}
         </button>
       </div>
+      {imagenAmpliada && <ImageModal src={imagenAmpliada} onClose={() => setImagenAmpliada(null)} />}
     </div>
   );
 }

@@ -43,6 +43,7 @@ export interface ObjetoEquivocado {
   tipo: string;
   descripcion: string;
   foto_adjunta: boolean;
+  foto_url?: string;
 }
 
 export interface ItemInspeccion {

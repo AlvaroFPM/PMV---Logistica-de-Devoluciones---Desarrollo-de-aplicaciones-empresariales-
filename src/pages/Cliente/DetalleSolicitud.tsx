@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BadgeEstado } from '../../components/BadgeEstado';
+import { ImageModal } from '../../components/ImageModal';
 import { useAppContext } from '../../context/AppContext';
 import type { EstadoMaestro } from '../../types/devolucion';
 
@@ -71,6 +72,15 @@ export default function DetalleSolicitud() {
   const [banco, setBanco] = useState(() => solicitud?.cliente.banco ?? '');
   const [cuenta, setCuenta] = useState(() => solicitud?.cliente.cuenta ?? '');
   const [rut, setRut] = useState(() => solicitud?.cliente.rut ?? '');
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
+  const [objetoParaRecuperar, setObjetoParaRecuperar] = useState<string | null>(null);
+  const [objetosCoordinados, setObjetosCoordinados] = useState<string[]>([]);
+  const [formRecuperacion, setFormRecuperacion] = useState({
+    nombres: '',
+    rut: '',
+    direccion: '',
+    contacto: ''
+  });
 
   if (!solicitud) {
     return (
@@ -107,6 +117,20 @@ export default function DetalleSolicitud() {
     }
     actualizarDatosBancarios(id, rut.trim(), banco.trim(), cuenta.trim());
     alert('Los datos bancarios quedaron guardados para el ejecutivo de pagos.');
+  };
+
+  const handleRecuperacionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRecuperacion.nombres || !formRecuperacion.rut || !formRecuperacion.direccion || !formRecuperacion.contacto) {
+      alert('Por favor completa todos los campos del formulario.');
+      return;
+    }
+    alert('¡Solicitud de recuperación enviada con éxito!\n\nTe llegará un comprobante al correo con los detalles del envío.');
+    if (objetoParaRecuperar) {
+      setObjetosCoordinados(prev => [...prev, objetoParaRecuperar]);
+    }
+    setObjetoParaRecuperar(null);
+    setFormRecuperacion({ nombres: '', rut: '', direccion: '', contacto: '' });
   };
 
   return (
@@ -204,7 +228,16 @@ export default function DetalleSolicitud() {
                     </div>
                     <div>
                       <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Evidencia adjunta</span>
-                      <span className="text-blue-600 truncate block font-mono text-xs">{item.evidencia}</span>
+                      {item.evidencia.startsWith('data:image/') || item.evidencia.startsWith('http') || item.evidencia.endsWith('.jpg') ? (
+                        <img 
+                          src={item.evidencia.startsWith('data:image/') || item.evidencia.startsWith('http') ? item.evidencia : `https://placehold.co/600x400?text=${item.evidencia}`} 
+                          alt="Evidencia" 
+                          className="h-20 w-20 object-cover rounded border border-gray-200 cursor-zoom-in hover:opacity-80 transition-opacity shadow-sm" 
+                          onClick={() => setImagenAmpliada(item.evidencia.startsWith('data:image/') || item.evidencia.startsWith('http') ? item.evidencia : `https://placehold.co/600x400?text=${item.evidencia}`)}
+                        />
+                      ) : (
+                        <span className="text-blue-600 truncate block font-mono text-xs">{item.evidencia}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -253,6 +286,59 @@ export default function DetalleSolicitud() {
             );
           })}
         </div>
+
+        {solicitud.objetos_equivocados && solicitud.objetos_equivocados.length > 0 && (
+          <div className="space-y-4 mt-8">
+            <h2 className="text-lg font-semibold text-gray-800 border-b pb-2 flex items-center gap-2">
+              <span className="text-amber-500">⚠️</span> Objetos Ajenos Retenidos
+            </h2>
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm mb-4">
+              <h3 className="text-sm font-medium text-amber-800">Acción Requerida</h3>
+              <p className="mt-1 text-sm text-amber-700">
+                Se han detectado objetos en tu paquete que no corresponden a esta solicitud de devolución. Tienes un plazo de <strong>15 días hábiles</strong> para coordinar su recuperación. De lo contrario, los objetos pasarán a descarte.
+              </p>
+            </div>
+            
+            {solicitud.objetos_equivocados.map((obj) => (
+              <div key={obj.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-5">
+                <div className="flex-1 flex gap-4">
+                  {obj.foto_url ? (
+                    <img 
+                      src={obj.foto_url} 
+                      alt="Objeto retenido" 
+                      className="w-20 h-20 object-cover rounded-lg border border-gray-200 cursor-zoom-in hover:opacity-80 transition-opacity"
+                      onClick={() => setImagenAmpliada(obj.foto_url!)}
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-gray-100 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400">
+                      <span className="text-xs">Sin foto</span>
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2">
+                      <h3 className="text-base font-bold text-gray-900">{obj.tipo}</h3>
+                      <BadgeEstado estado="Objeto Equivocado Retenido" />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{obj.descripcion}</p>
+                  </div>
+                </div>
+                <div className="md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-5">
+                  <button 
+                    onClick={() => setObjetoParaRecuperar(obj.id)}
+                    disabled={objetosCoordinados.includes(obj.id)}
+                    className={`w-full text-xs font-medium py-2 rounded shadow-sm transition-colors ${
+                      objetosCoordinados.includes(obj.id)
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200'
+                        : 'text-amber-900 bg-amber-200 hover:bg-amber-300'
+                    }`}
+                  >
+                    {objetosCoordinados.includes(obj.id) ? 'Recuperación en curso' : 'Coordinar Recuperación'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {requiereDatosBancarios && (
           <div className="bg-white p-5 rounded-xl border border-blue-200 shadow-sm">
@@ -313,14 +399,95 @@ export default function DetalleSolicitud() {
           <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Datos del cliente</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
             <p><span className="font-semibold">Nombre:</span> {cliente.nombre}</p>
-            <p><span className="font-semibold">RUT:</span> {cliente.rut}</p>
-            <p><span className="font-semibold">Banco:</span> {cliente.banco}</p>
-            <p><span className="font-semibold">Cuenta:</span> {cliente.cuenta}</p>
+            <p><span className="font-semibold">RUT:</span> {cliente.rut || <span className="text-gray-400 italic">Pendiente</span>}</p>
+            <p><span className="font-semibold">Banco:</span> {cliente.banco || <span className="text-gray-400 italic">Pendiente</span>}</p>
+            <p><span className="font-semibold">Cuenta:</span> {cliente.cuenta || <span className="text-gray-400 italic">Pendiente</span>}</p>
             <p><span className="font-semibold">Costo envío original:</span> ${costoEnvioOriginal.toLocaleString('es-CL')}</p>
           </div>
         </div>
 
       </div>
+      {imagenAmpliada && <ImageModal src={imagenAmpliada} onClose={() => setImagenAmpliada(null)} />}
+
+      {objetoParaRecuperar && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-scale-in">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Coordinar Recuperación</h3>
+              <button onClick={() => setObjetoParaRecuperar(null)} className="text-gray-400 hover:text-gray-600">
+                ✕
+              </button>
+            </div>
+            
+            <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg border border-blue-200 mb-5">
+              Por favor, ingresa los datos a continuación para que podamos despachar el objeto de vuelta a tu domicilio.
+            </div>
+
+            <form onSubmit={handleRecuperacionSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombres y Apellidos</label>
+                <input
+                  type="text"
+                  required
+                  value={formRecuperacion.nombres}
+                  onChange={e => setFormRecuperacion(prev => ({...prev, nombres: e.target.value}))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ej: Amaro Alarcón"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+                <input
+                  type="text"
+                  required
+                  value={formRecuperacion.rut}
+                  onChange={e => setFormRecuperacion(prev => ({...prev, rut: e.target.value}))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ej: 19.123.456-7"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de Despacho</label>
+                <input
+                  type="text"
+                  required
+                  value={formRecuperacion.direccion}
+                  onChange={e => setFormRecuperacion(prev => ({...prev, direccion: e.target.value}))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ej: Av. Providencia 1234, Depto 55"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Contacto</label>
+                <input
+                  type="tel"
+                  required
+                  value={formRecuperacion.contacto}
+                  onChange={e => setFormRecuperacion(prev => ({...prev, contacto: e.target.value}))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  placeholder="Ej: +56 9 1234 5678"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setObjetoParaRecuperar(null)}
+                  className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 shadow-sm"
+                >
+                  Confirmar Envío
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

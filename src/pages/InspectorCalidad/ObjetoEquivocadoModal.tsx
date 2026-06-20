@@ -3,13 +3,30 @@ import { X, Upload, CheckCircle } from 'lucide-react';
 
 interface ObjetoEquivocadoModalProps {
   onClose: () => void;
-  onGuardar: (tipo: string, descripcion: string, fotoAdjunta: boolean) => void;
+  onGuardar: (tipo: string, descripcion: string, fotoAdjunta: boolean, fotoUrl?: string) => void;
 }
 
 export default function ObjetoEquivocadoModal({ onClose, onGuardar }: ObjetoEquivocadoModalProps) {
   const [tipo, setTipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [fotoAdjunta, setFotoAdjunta] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState<string | undefined>();
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecciona una imagen válida.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFotoUrl(reader.result as string);
+        setFotoAdjunta(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex items-center justify-center px-4">
@@ -49,19 +66,20 @@ export default function ObjetoEquivocadoModal({ onClose, onGuardar }: ObjetoEqui
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1.5">Evidencia Fotográfica</label>
-            {fotoAdjunta ? (
-              <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span className="text-sm font-semibold text-emerald-700">foto_evidencia.jpg adjunta</span>
+            {fotoAdjunta && fotoUrl ? (
+              <div className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <img src={fotoUrl} alt="Objeto equivocado" className="w-full h-32 object-cover rounded-lg border border-slate-200" />
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-sm font-semibold text-emerald-700">Imagen adjunta</span>
+                </div>
               </div>
             ) : (
-              <button
-                onClick={() => setFotoAdjunta(true)}
-                className="flex items-center gap-2 px-4 py-3 w-full border-2 border-dashed border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-xl text-slate-500 hover:text-sky-600 text-sm font-semibold transition-all"
-              >
+              <label className="flex items-center justify-center gap-2 px-4 py-3 w-full border-2 border-dashed border-slate-200 hover:border-sky-400 hover:bg-sky-50 rounded-xl text-slate-500 hover:text-sky-600 text-sm font-semibold transition-all cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Subir Foto
-              </button>
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+              </label>
             )}
           </div>
         </div>
@@ -74,7 +92,7 @@ export default function ObjetoEquivocadoModal({ onClose, onGuardar }: ObjetoEqui
             Cancelar
           </button>
           <button
-            onClick={() => onGuardar(tipo, descripcion, fotoAdjunta)}
+            onClick={() => onGuardar(tipo, descripcion, fotoAdjunta, fotoUrl)}
             className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white text-sm font-semibold transition-all shadow-sm"
           >
             Guardar

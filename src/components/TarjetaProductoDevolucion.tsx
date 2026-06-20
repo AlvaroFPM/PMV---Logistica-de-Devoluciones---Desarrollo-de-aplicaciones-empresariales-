@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { ItemFormState } from '../types/devolucion';
+import { ImageModal } from './ImageModal';
 
 interface TarjetaProductoDevolucionProps {
   idProducto: string;
@@ -27,6 +29,7 @@ export function TarjetaProductoDevolucion({
   onToggleSeleccion,
   onActualizarCampo
 }: TarjetaProductoDevolucionProps) {
+  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   
   const containerClasses = bloqueadoPorConcurrencia
     ? 'border-gray-200 bg-gray-50 opacity-75'
@@ -37,7 +40,15 @@ export function TarjetaProductoDevolucion({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onActualizarCampo(idProducto, 'evidencia', file.name);
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecciona una imagen válida.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onActualizarCampo(idProducto, 'evidencia', reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -120,9 +131,17 @@ export function TarjetaProductoDevolucion({
                 />
               </label>
               {estadoFormulario.evidencia ? (
-                <span className="text-sm text-green-600 font-medium break-all">
-                  ✓ {estadoFormulario.evidencia}
-                </span>
+                <div className="flex flex-col">
+                  <img 
+                    src={estadoFormulario.evidencia} 
+                    alt="Evidencia" 
+                    className="h-16 w-16 object-cover rounded border border-gray-300 mb-1 cursor-zoom-in hover:opacity-80 transition-opacity" 
+                    onClick={() => setImagenAmpliada(estadoFormulario.evidencia)}
+                  />
+                  <span className="text-sm text-green-600 font-medium">
+                    ✓ Imagen cargada
+                  </span>
+                </div>
               ) : (
                 <span className="text-sm text-gray-500">Ningún archivo seleccionado</span>
               )}
@@ -144,6 +163,8 @@ export function TarjetaProductoDevolucion({
           </div>
         </div>
       )}
+
+      {imagenAmpliada && <ImageModal src={imagenAmpliada} onClose={() => setImagenAmpliada(null)} />}
     </div>
   );
 }
