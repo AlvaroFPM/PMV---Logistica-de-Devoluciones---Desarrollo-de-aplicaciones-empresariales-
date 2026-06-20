@@ -2,7 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
+// Catálogo maestro para recuperar el precio de datos antiguos
+const CATALOGO_PRECIOS: Record<string, number> = {
+  'PROD-001': 650000,
+  'PROD-002': 180000,
+  'PROD-003': 120000,
+};
+
+const obtenerPrecioSeguro = (item: any) => {
+  if (item.precio && item.precio > 0) return item.precio;
+  if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
+  return 0;
+};
+
 const calcularDiasSLA = (fechaCreacion: string) => {
+  if (!fechaCreacion) return 7; // Defensa contra datos nulos
   const hoy = new Date();
   const creacion = new Date(fechaCreacion);
   const diferenciaDias = Math.floor((hoy.getTime() - creacion.getTime()) / (1000 * 60 * 60 * 24));
@@ -22,7 +36,7 @@ export default function DashboardSolicitudes() {
       if (pestanaActiva === 'Pendiente') {
         return (a.diasParaExpirar ?? 999) - (b.diasParaExpirar ?? 999);
       }
-      return b.fechaCreacion.localeCompare(a.fechaCreacion);
+      return (b.fechaCreacion || '').localeCompare(a.fechaCreacion || '');
     });
 
   return (
@@ -34,7 +48,7 @@ export default function DashboardSolicitudes() {
         <p className="text-gray-500 mt-2">Gestiona y evalúa las solicitudes de garantía y retracto.</p>
       </div>
 
-      {/* PESTAÑAS (TABS) */}
+      {/* PESTAÑAS */}
       <div className="flex border-b border-gray-200 mb-6">
         <button
           onClick={() => setPestanaActiva('Pendiente')}
@@ -84,22 +98,23 @@ export default function DashboardSolicitudes() {
               </tr>
             ) : (
               solicitudesFiltradas.map((solicitud) => {
-                // Lógica visual para la urgencia
                 const diasParaExpirar = solicitud.diasParaExpirar ?? calcularDiasSLA(solicitud.fechaCreacion);
                 const esUrgente = diasParaExpirar !== null && diasParaExpirar <= 1;
                 const estaAlLimite = diasParaExpirar === 2;
-                const totalItems = solicitud.items.length;
-                const monto = solicitud.items.reduce((total, item) => total + item.precio, 0);
+                const totalItems = solicitud.items ? solicitud.items.length : 0;
+                
+                // Mapeo seguro de cliente y precio
+                const nombreCliente = typeof solicitud.cliente === 'string' ? solicitud.cliente : solicitud.cliente?.nombre || 'Desconocido';
+                const monto = solicitud.items ? solicitud.items.reduce((total, item) => total + obtenerPrecioSeguro(item), 0) : 0;
 
                 return (
                   <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4 font-medium text-gray-900">{solicitud.id}</td>
-                    <td className="p-4 text-gray-700">{solicitud.cliente.nombre}</td>
+                    <td className="p-4 text-gray-700">{nombreCliente}</td>
                     <td className="p-4 text-gray-500 text-sm">{solicitud.fechaCreacion}</td>
                     <td className="p-4 text-gray-500 text-sm">{totalItems}</td>
                     <td className="p-4 text-gray-700 font-medium">${monto.toLocaleString('es-CL')}</td>
                     
-                    {/* COLUMNA DE SLA / URGENCIA */}
                     <td className="p-4">
                       {pestanaActiva === 'Pendiente' ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
@@ -116,7 +131,6 @@ export default function DashboardSolicitudes() {
                       )}
                     </td>
 
-                    {/* BOTÓN DE ACCIÓN */}
                     <td className="p-4 text-right">
                       {pestanaActiva === 'Pendiente' ? (
                         <button
@@ -141,7 +155,6 @@ export default function DashboardSolicitudes() {
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }

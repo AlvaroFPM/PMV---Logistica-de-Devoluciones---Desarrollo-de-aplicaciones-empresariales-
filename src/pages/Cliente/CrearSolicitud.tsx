@@ -125,12 +125,14 @@ export default function CrearSolicitud() {
               Selecciona los productos a devolver
             </h2>
             
+            
             <div className="space-y-4">
               {productosOrden.map((producto) => (
                 <TarjetaProductoDevolucion
                   key={producto.id}
                   idProducto={producto.id}
                   nombreProducto={producto.nombre}
+                  precio={producto.precio} // ¡AQUÍ ESTÁ LA NUEVA PROPIEDAD!
                   bloqueadoPorConcurrencia={productosBloqueados.includes(producto.id)}
                   estadoFormulario={formItems[producto.id]}
                   onToggleSeleccion={handleToggleSeleccion}

@@ -3,6 +3,7 @@ import type { ItemFormState } from '../types/devolucion';
 interface TarjetaProductoDevolucionProps {
   idProducto: string;
   nombreProducto: string;
+  precio: number; // Añadimos la propiedad del precio
   imagenUrl?: string;
   bloqueadoPorConcurrencia: boolean;
   estadoFormulario: ItemFormState;
@@ -17,6 +18,7 @@ interface TarjetaProductoDevolucionProps {
 export function TarjetaProductoDevolucion({
   idProducto,
   nombreProducto,
+  precio,
   imagenUrl,
   bloqueadoPorConcurrencia,
   estadoFormulario,
@@ -24,7 +26,6 @@ export function TarjetaProductoDevolucion({
   onActualizarCampo
 }: TarjetaProductoDevolucionProps) {
   
-  // Estilos dinámicos basados en el estado
   const containerClasses = bloqueadoPorConcurrencia
     ? 'border-gray-200 bg-gray-50 opacity-75'
     : estadoFormulario.seleccionado
@@ -34,19 +35,13 @@ export function TarjetaProductoDevolucion({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const lector = new FileReader();
-
-      lector.onload = () => {
-        onActualizarCampo(idProducto, 'evidencia', String(lector.result ?? file.name));
-      };
-
-      lector.readAsDataURL(file);
+      onActualizarCampo(idProducto, 'evidencia', file.name);
     }
   };
 
   return (
     <div className={`p-4 rounded-lg border transition-all duration-200 ${containerClasses}`}>
-      {/* CABECERA: Checkbox y Título */}
+      {/* CABECERA: Checkbox, Título y Precio */}
       <div className="flex items-start gap-4">
         <div className="flex items-center h-6 mt-1">
           <input
@@ -59,7 +54,6 @@ export function TarjetaProductoDevolucion({
           />
         </div>
         
-        {/* Espacio para imagen placeholder (Opcional) */}
         {imagenUrl && (
           <div className="w-16 h-16 bg-gray-100 rounded border border-gray-200 overflow-hidden flex-shrink-0">
              <img src={imagenUrl} alt={nombreProducto} className="w-full h-full object-cover" />
@@ -81,13 +75,19 @@ export function TarjetaProductoDevolucion({
             </span>
           )}
         </div>
+
+        {/* Renderizado del Precio a la derecha */}
+        <div className="text-right shrink-0">
+            <span className={`font-bold text-lg ${bloqueadoPorConcurrencia ? 'text-gray-400' : 'text-gray-700'}`}>
+                ${precio.toLocaleString('es-CL')}
+            </span>
+        </div>
       </div>
 
-      {/* CUERPO: Formulario que se expande si está seleccionado */}
+      {/* CUERPO: Formulario que se expande */}
       {!bloqueadoPorConcurrencia && estadoFormulario.seleccionado && (
         <div className="mt-4 pt-4 border-t border-gray-200/60 pl-9 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
           
-          {/* Campo: Motivo */}
           <div>
             <label htmlFor={`motivo-${idProducto}`} className="block text-sm font-medium text-gray-700 mb-1">
               Motivo de la devolución <span className="text-red-500">*</span>
@@ -106,7 +106,6 @@ export function TarjetaProductoDevolucion({
             </select>
           </div>
 
-          {/* Campo: Evidencia Fotográfica */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Evidencia fotográfica <span className="text-red-500">*</span>
@@ -131,17 +130,16 @@ export function TarjetaProductoDevolucion({
             </div>
           </div>
 
-          {/* Campo: Comentarios */}
           <div>
             <label htmlFor={`comentarios-${idProducto}`} className="block text-sm font-medium text-gray-700 mb-1">
-              Descripción del problema
+              Detalles adicionales
             </label>
             <textarea
               id={`comentarios-${idProducto}`}
               rows={2}
               value={estadoFormulario.comentarios}
               onChange={(e) => onActualizarCampo(idProducto, 'comentarios', e.target.value)}
-              placeholder="Describa la situación con el producto..."
+              placeholder="Describa el problema con el producto..."
               className="block p-2.5 w-full text-sm text-gray-900 bg-white rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>

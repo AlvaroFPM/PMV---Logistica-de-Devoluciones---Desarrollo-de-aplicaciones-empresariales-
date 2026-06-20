@@ -1,26 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+
+// Catálogo maestro de productos para recuperar el precio 
+const CATALOGO_PRECIOS: Record<string, number> = {
+  'PROD-001': 650000,
+  'PROD-002': 180000,
+  'PROD-003': 120000,
+};
 
 export default function ProcesarPago() {
   const navigate = useNavigate();
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const { solicitudes, pagarSolicitud } = useAppContext();
   const solicitud = solicitudes.find((item) => item.id === idSolicitud);
+  
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [numeroTransaccion, setNumeroTransaccion] = useState('');
+
+  // Autoseleccionar los ítems que estén aprobados al cargar la vista
+  useEffect(() => {
+    if (solicitud) {
+      const aprobados = solicitud.items
+        .filter(i => i.estado.includes('Aprobado'))
+        .map(i => i.id);
+      setSeleccionados(aprobados);
+    }
+  }, [solicitud]);
 
   if (!solicitud) {
     return <div className="p-6 text-gray-700">Solicitud no encontrada.</div>;
   }
 
-  const puedePagar = seleccionados.length > 0 && numeroTransaccion.trim() !== '';
+  const obtenerPrecioSeguro = (item: any) => {
+    if (item.precio && item.precio > 0) return item.precio;
+    if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
+    return 0;
+  };
+
+  // 1. LÓGICA DE VALIDACIÓN DE DATOS BANCARIOS
+  const esDatoInvalido = (dato: string | undefined) => {
+    if (!dato) return true;
+    const limpio = dato.trim().toLowerCase();
+    return limpio === '' || limpio === 'n/a' || limpio === 'pendiente';
+  };
+
+  const datosBancariosCompletos = 
+    !esDatoInvalido(solicitud.cliente.rut) && 
+    !esDatoInvalido(solicitud.cliente.banco) && 
+    !esDatoInvalido(solicitud.cliente.cuenta);
+
+  // 2. RESTRICCIÓN DE PAGO ACTUALIZADA
+  const puedePagar = seleccionados.length > 0 && numeroTransaccion.trim() !== '' && datosBancariosCompletos;
 
   const subtotal = solicitud.items
     .filter((item) => seleccionados.includes(item.id))
-    .reduce((acc, item) => acc + item.precio, 0);
+    .reduce((acc, item) => acc + obtenerPrecioSeguro(item), 0);
 
-  const aplicaEnvio = seleccionados.length === solicitud.items.length && solicitud.estado === 'Pendiente de Reembolso';
+  const esGarantia = solicitud.items.every(i => i.motivo === 'Garantía' || i.motivo.includes('Falla'));
+  const esDevolucionTotal = seleccionados.length === solicitud.items.length;
+  const aplicaEnvio = esGarantia && esDevolucionTotal;
+  
   const total = subtotal + (aplicaEnvio ? solicitud.costoEnvioOriginal : 0);
 
   const toggleSeleccion = (id: string) => {
@@ -65,7 +105,7 @@ export default function ProcesarPago() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-700">${item.precio.toLocaleString('es-CL')}</p>
+                    <p className="font-bold text-gray-700">${obtenerPrecioSeguro(item).toLocaleString('es-CL')}</p>
                   </div>
                 </label>
               ))}
@@ -74,15 +114,30 @@ export default function ProcesarPago() {
         </div>
 
         <div className="col-span-1 space-y-4">
-          <div className="bg-blue-900 text-white p-5 rounded-lg shadow-sm">
+          <div className="bg-blue-900 text-white p-5 rounded-lg shadow-sm relative">
             <h3 className="text-sm uppercase text-blue-200 font-bold mb-3 tracking-wider">Datos de Transferencia</h3>
+            
+            {/* 3. ALERTA VISUAL DE DATOS INCOMPLETOS */}
+            {!datosBancariosCompletos && (
+              <div className="mb-4 bg-red-500/20 border border-red-400 text-red-100 px-3 py-2 rounded text-xs font-medium flex items-start gap-2">
+                <span>⚠️</span>
+                <span>Faltan los datos bancarios del cliente. Debes esperar a que los actualice para poder pagar.</span>
+              </div>
+            )}
+
             <p className="font-semibold text-lg">{solicitud.cliente.nombre}</p>
-            <p className="text-sm text-blue-100 mt-1">RUT: {solicitud.cliente.rut}</p>
+            <p className={`text-sm mt-1 ${esDatoInvalido(solicitud.cliente.rut) ? 'text-red-300 font-bold' : 'text-blue-100'}`}>
+              RUT: {solicitud.cliente.rut}
+            </p>
             <div className="mt-4 p-3 bg-blue-800 rounded">
               <p className="text-xs text-blue-200">Banco Destino</p>
-              <p className="font-medium">{solicitud.cliente.banco}</p>
+              <p className={`font-medium ${esDatoInvalido(solicitud.cliente.banco) ? 'text-red-300' : ''}`}>
+                {solicitud.cliente.banco}
+              </p>
               <p className="text-xs text-blue-200 mt-2">N° Cuenta</p>
-              <p className="font-medium">{solicitud.cliente.cuenta}</p>
+              <p className={`font-medium ${esDatoInvalido(solicitud.cliente.cuenta) ? 'text-red-300' : ''}`}>
+                {solicitud.cliente.cuenta}
+              </p>
             </div>
           </div>
 
@@ -101,7 +156,9 @@ export default function ProcesarPago() {
                 ) : (
                   <div className="text-right">
                     <span className="line-through text-gray-400 mr-2">${solicitud.costoEnvioOriginal.toLocaleString('es-CL')}</span>
-                    <span className="text-red-500 text-xs font-bold block">(No aplica: devolución parcial)</span>
+                    <span className="text-red-500 text-xs font-bold block">
+                      (No aplica: {esGarantia ? 'Devolución parcial' : 'Retracto'})
+                    </span>
                   </div>
                 )}
               </div>
@@ -117,7 +174,8 @@ export default function ProcesarPago() {
               <input
                 type="text"
                 placeholder="Ej: TR-8849201"
-                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={!datosBancariosCompletos}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 value={numeroTransaccion}
                 onChange={(e) => setNumeroTransaccion(e.target.value)}
               />
@@ -128,7 +186,8 @@ export default function ProcesarPago() {
               onClick={ejecutarPago}
               className={`w-full py-3 rounded-lg font-bold transition-all ${puedePagar ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
-              REGISTRAR PAGO
+              {/* 4. CAMBIO DE TEXTO DEL BOTÓN SI FALTAN DATOS */}
+              {!datosBancariosCompletos ? 'ESPERANDO DATOS' : 'REGISTRAR PAGO'}
             </button>
           </div>
         </div>
