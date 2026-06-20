@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
-// 1. Interfaz segura para que ESLint no marque errores con datos antiguos
 interface ItemConPrecioOpcional {
   id: string;
   precio?: number;
@@ -14,6 +13,18 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-001': 650000,
   'PROD-002': 180000,
   'PROD-003': 120000,
+  'PROD-004': 500000,
+  'PROD-005': 200000,
+  'PROD-006': 250000,
+  'PROD-007': 400000,
+  'PROD-008': 1200000,
+  'PROD-009': 350000,
+  'PROD-010': 150000,
+  'PROD-011': 90000,
+  'PROD-012': 800000,
+  'PROD-013': 700000,
+  'PROD-014': 300000,
+  'PROD-015': 100000,
 };
 
 const obtenerPrecioSeguro = (item: ItemConPrecioOpcional): number => {
@@ -23,18 +34,16 @@ const obtenerPrecioSeguro = (item: ItemConPrecioOpcional): number => {
 };
 
 export default function EvaluarSolicitud() {
-  // 2. RECUPERAMOS EL useParams PARA QUE LEA LA URL CORRECTAMENTE
-  const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
+  const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const { solicitudes, evaluarSolicitud } = useAppContext();
-  
   const [itemExpandido, setItemExpandido] = useState<string | null>(null);
   const [decisiones, setDecisiones] = useState<Record<string, string>>({});
   
   const solicitud = solicitudes.find((item) => item.id === idSolicitud);
 
   if (!solicitud) {
-    return <div className="p-8 text-center text-gray-500 font-medium">Solicitud no encontrada.</div>;
+    return <div className="p-6 text-gray-700">Solicitud no encontrada.</div>;
   }
 
   const toggleExpandir = (id: string) => {
@@ -63,7 +72,6 @@ export default function EvaluarSolicitud() {
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen relative">
       <div className="mb-4">
-        {/* 3. RECUPERAMOS EL useNavigate PARA VOLVER AL PANEL */}
         <button onClick={() => navigate('/servicio-cliente')} className="text-sm text-blue-600 hover:underline">← Volver</button>
       </div>
       
@@ -92,7 +100,6 @@ export default function EvaluarSolicitud() {
           const estaExpandido = itemExpandido === item.id;
           const precioItemSeguro = obtenerPrecioSeguro(item);
           
-          // Tipado seguro para ESLint
           const nombreProducto = item.nombreProducto || (item as ItemConPrecioOpcional).nombre || 'Producto';
           const descripcionStr = item.descripcion || item.motivo || 'Sin descripción';
           const evidenciaStr = item.evidencia || ''; 
@@ -175,7 +182,6 @@ export default function EvaluarSolicitud() {
           {listoParaConfirmar ? 'CONFIRMAR EVALUACIÓN' : 'EVALÚE TODOS LOS ÍTEMS PARA CONTINUAR'}
         </button>
       </div>
-
     </div>
   );
 }

@@ -1,24 +1,52 @@
-import type { EstadoMaestro, ItemMaestro, ObjetoEquivocado, SolicitudMaestra } from '../types/devolucion';
+import type { SolicitudMaestra, ItemMaestro, ObjetoEquivocado, EstadoMaestro } from '../types/devolucion';
 
 export const evaluarPorServicioCliente = (solicitud: SolicitudMaestra, decisiones: Record<string, string>): SolicitudMaestra => {
-  const rechazos = Object.values(decisiones).some((decision) => decision.includes('Rechazar'));
+  const valoresDecisiones = Object.values(decisiones);
+  
+  const todosRechazados = valoresDecisiones.every(d => d.includes('Rechazar'));
+  const todosAprobados = valoresDecisiones.every(d => d.includes('Aprobado'));
+  const esMixto = !todosRechazados && !todosAprobados;
+
+  let nuevoEstado: EstadoMaestro;
+
+  if (todosRechazados) {
+    nuevoEstado = 'Cancelada — Rechazo Documental';
+  } else if (esMixto) {
+    nuevoEstado = 'En Resolución Parcial';
+  } else {
+    nuevoEstado = 'Aprobada para Envío';
+  }
+
+  // CORRECCIÓN 1: Guardamos el veredicto en cada ítem para que Bodega sepa cuáles no recibirá
+  const itemsActualizados = solicitud.items.map(item => {
+    const decision = decisiones[item.id];
+    let nuevoEstadoItem = item.estado;
+    
+    if (decision && decision.includes('Rechazar')) {
+      // Marcamos forzosamente para que no pase al Inspector
+      nuevoEstadoItem = 'Rechazado en Revisión Documental' as any; 
+    }
+    
+    return { ...item, estado: nuevoEstadoItem };
+  });
 
   return {
     ...solicitud,
-    estado: rechazos ? 'Cancelada — Rechazo Documental' : 'Aprobada para Envío'
+    estado: nuevoEstado,
+    items: itemsActualizados
   };
 };
 
 export const finalizarInspeccionFisica = (solicitud: SolicitudMaestra, items: ItemMaestro[], objetos: ObjetoEquivocado[]): SolicitudMaestra => {
-  const todosAprobados = items.every((item) => item.estado.includes('Aprobado'));
-  const todosRechazados = items.every((item) => item.estado.includes('Rechazado') || item.estado === 'No Recibido');
-  const algunFraude = items.some((item) => item.estado === 'Rechazado por Fraude');
+  const algunFraude = items.some(i => i.estado === 'Rechazado por Fraude');
+  const algunAprobadoFisico = items.some(i => i.estado.includes('Aprobado'));
+  const todosRechazados = items.every(i => i.estado.includes('Rechazado') || i.estado === 'No Recibido');
 
-  let nuevoEstado: EstadoMaestro = 'En Resolución Parcial';
-
+  let nuevoEstado: EstadoMaestro = 'En Resolución Parcial'; 
+  
   if (algunFraude) {
-    nuevoEstado = 'En Resolución Parcial';
-  } else if (todosAprobados) {
+    nuevoEstado = 'En Resolución Parcial'; 
+  } else if (algunAprobadoFisico) {
     nuevoEstado = 'Pendiente de Reembolso';
   } else if (todosRechazados) {
     nuevoEstado = 'Rechazada por Inconsistencia Física';

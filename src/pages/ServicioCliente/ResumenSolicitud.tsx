@@ -6,6 +6,18 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-001': 650000,
   'PROD-002': 180000,
   'PROD-003': 120000,
+  'PROD-004': 500000,
+  'PROD-005': 200000,
+  'PROD-006': 250000,
+  'PROD-007': 400000,
+  'PROD-008': 1200000,
+  'PROD-009': 350000,
+  'PROD-010': 150000,
+  'PROD-011': 90000,
+  'PROD-012': 800000,
+  'PROD-013': 700000,
+  'PROD-014': 300000,
+  'PROD-015': 100000,
 };
 
 interface ItemConPrecioOpcional {
@@ -55,7 +67,6 @@ export default function ResumenSolicitud() {
             {solicitud.items && solicitud.items.map((item) => (
               <div key={item.id} className="flex justify-between items-center rounded-lg border border-gray-200 px-4 py-3">
                 <div className="flex flex-col">
-                  {/* AQUÍ SE CORRIGE EL ERROR DE TYPESCRIPT */}
                   <span className="font-medium text-gray-800">{item.nombreProducto || (item as ItemConPrecioOpcional).nombre || 'Producto'}</span>
                   <span className="text-sm font-bold text-gray-600">${obtenerPrecioSeguro(item).toLocaleString('es-CL')}</span>
                 </div>

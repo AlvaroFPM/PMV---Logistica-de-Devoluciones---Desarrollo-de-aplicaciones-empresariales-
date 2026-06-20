@@ -20,7 +20,7 @@ export default function SearchScreen() {
     const encontrada = solicitudes.find((solicitud) => solicitud.id === codigo.trim().toUpperCase());
 
     if (encontrada) {
-      if (encontrada.estado !== 'En Inspección Física') {
+      if (encontrada.estado !== 'En Inspección Física' && encontrada.estado !== 'En Resolución Parcial') {
         setError(`Solicitud encontrada, pero su estado actual es "${encontrada.estado}". No apta para inspección ahora mismo.`);
       } else {
         navigate(`/inspector-calidad/inspeccion/${encontrada.id}`);

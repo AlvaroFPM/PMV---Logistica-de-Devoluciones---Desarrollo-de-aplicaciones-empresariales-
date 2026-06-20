@@ -2,12 +2,28 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
-// Catálogo maestro de productos para recuperar el precio 
 const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-001': 650000,
   'PROD-002': 180000,
   'PROD-003': 120000,
+  'PROD-004': 500000,
+  'PROD-005': 200000,
+  'PROD-006': 250000,
+  'PROD-007': 400000,
+  'PROD-008': 1200000,
+  'PROD-009': 350000,
+  'PROD-010': 150000,
+  'PROD-011': 90000,
+  'PROD-012': 800000,
+  'PROD-013': 700000,
+  'PROD-014': 300000,
+  'PROD-015': 100000,
 };
+
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+}
 
 export default function ProcesarPago() {
   const navigate = useNavigate();
@@ -18,7 +34,6 @@ export default function ProcesarPago() {
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [numeroTransaccion, setNumeroTransaccion] = useState('');
 
-  // Autoseleccionar los ítems que estén aprobados al cargar la vista
   useEffect(() => {
     if (solicitud) {
       const aprobados = solicitud.items
@@ -32,13 +47,12 @@ export default function ProcesarPago() {
     return <div className="p-6 text-gray-700">Solicitud no encontrada.</div>;
   }
 
-  const obtenerPrecioSeguro = (item: any) => {
+  const obtenerPrecioSeguro = (item: ItemConPrecioOpcional) => {
     if (item.precio && item.precio > 0) return item.precio;
     if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
     return 0;
   };
 
-  // 1. LÓGICA DE VALIDACIÓN DE DATOS BANCARIOS
   const esDatoInvalido = (dato: string | undefined) => {
     if (!dato) return true;
     const limpio = dato.trim().toLowerCase();
@@ -50,14 +64,18 @@ export default function ProcesarPago() {
     !esDatoInvalido(solicitud.cliente.banco) && 
     !esDatoInvalido(solicitud.cliente.cuenta);
 
-  // 2. RESTRICCIÓN DE PAGO ACTUALIZADA
+  // CORRECCIÓN: Filtramos la lista para aislar solo los productos aprobados a reembolsar
+  const itemsPagables = solicitud.items.filter(item => item.estado.includes('Aprobado'));
+
   const puedePagar = seleccionados.length > 0 && numeroTransaccion.trim() !== '' && datosBancariosCompletos;
 
-  const subtotal = solicitud.items
+  // Calculamos el subtotal basándonos solo en los ítems pagables seleccionados
+  const subtotal = itemsPagables
     .filter((item) => seleccionados.includes(item.id))
     .reduce((acc, item) => acc + obtenerPrecioSeguro(item), 0);
 
   const esGarantia = solicitud.items.every(i => i.motivo === 'Garantía' || i.motivo.includes('Falla'));
+  // La devolución total se evalúa contra la solicitud completa (no contra lo pagable) para la regla de envío
   const esDevolucionTotal = seleccionados.length === solicitud.items.length;
   const aplicaEnvio = esGarantia && esDevolucionTotal;
   
@@ -85,31 +103,37 @@ export default function ProcesarPago() {
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-4">
           <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Ítems de la Solicitud: {solicitud.id}</h2>
+            <h2 className="text-lg font-semibold text-gray-800 border-b pb-3 mb-4">Ítems a Reembolsar (Solicitud: {solicitud.id})</h2>
 
-            <div className="space-y-3">
-              {solicitud.items.map((item) => (
-                <label key={item.id} className={`flex items-center justify-between p-4 rounded-lg border transition-all ${seleccionados.includes(item.id) ? 'bg-blue-50 border-blue-400' : 'bg-white border-gray-300 hover:border-blue-300 cursor-pointer'}`}>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      checked={seleccionados.includes(item.id)}
-                      onChange={() => toggleSeleccion(item.id)}
-                    />
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{item.nombreProducto}</h3>
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${item.estado.includes('Aprobado') ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                        {item.estado}
-                      </span>
+            {itemsPagables.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 bg-gray-50 rounded border border-gray-200">
+                No hay productos aprobados para reembolsar en esta solicitud.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {itemsPagables.map((item) => (
+                  <label key={item.id} className={`flex items-center justify-between p-4 rounded-lg border transition-all ${seleccionados.includes(item.id) ? 'bg-blue-50 border-blue-400' : 'bg-white border-gray-300 hover:border-blue-300 cursor-pointer'}`}>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        checked={seleccionados.includes(item.id)}
+                        onChange={() => toggleSeleccion(item.id)}
+                      />
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{item.nombreProducto}</h3>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${item.estado.includes('Aprobado') ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {item.estado}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-700">${obtenerPrecioSeguro(item).toLocaleString('es-CL')}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+                    <div className="text-right">
+                      <p className="font-bold text-gray-700">${obtenerPrecioSeguro(item).toLocaleString('es-CL')}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -117,7 +141,6 @@ export default function ProcesarPago() {
           <div className="bg-blue-900 text-white p-5 rounded-lg shadow-sm relative">
             <h3 className="text-sm uppercase text-blue-200 font-bold mb-3 tracking-wider">Datos de Transferencia</h3>
             
-            {/* 3. ALERTA VISUAL DE DATOS INCOMPLETOS */}
             {!datosBancariosCompletos && (
               <div className="mb-4 bg-red-500/20 border border-red-400 text-red-100 px-3 py-2 rounded text-xs font-medium flex items-start gap-2">
                 <span>⚠️</span>
@@ -125,18 +148,18 @@ export default function ProcesarPago() {
               </div>
             )}
 
-            <p className="font-semibold text-lg">{solicitud.cliente.nombre}</p>
-            <p className={`text-sm mt-1 ${esDatoInvalido(solicitud.cliente.rut) ? 'text-red-300 font-bold' : 'text-blue-100'}`}>
-              RUT: {solicitud.cliente.rut}
+            <p className="font-semibold text-lg">{solicitud.cliente?.nombre || 'Cliente'}</p>
+            <p className={`text-sm mt-1 ${esDatoInvalido(solicitud.cliente?.rut) ? 'text-red-300 font-bold' : 'text-blue-100'}`}>
+              RUT: {solicitud.cliente?.rut}
             </p>
             <div className="mt-4 p-3 bg-blue-800 rounded">
               <p className="text-xs text-blue-200">Banco Destino</p>
-              <p className={`font-medium ${esDatoInvalido(solicitud.cliente.banco) ? 'text-red-300' : ''}`}>
-                {solicitud.cliente.banco}
+              <p className={`font-medium ${esDatoInvalido(solicitud.cliente?.banco) ? 'text-red-300' : ''}`}>
+                {solicitud.cliente?.banco}
               </p>
               <p className="text-xs text-blue-200 mt-2">N° Cuenta</p>
-              <p className={`font-medium ${esDatoInvalido(solicitud.cliente.cuenta) ? 'text-red-300' : ''}`}>
-                {solicitud.cliente.cuenta}
+              <p className={`font-medium ${esDatoInvalido(solicitud.cliente?.cuenta) ? 'text-red-300' : ''}`}>
+                {solicitud.cliente?.cuenta}
               </p>
             </div>
           </div>
@@ -186,7 +209,6 @@ export default function ProcesarPago() {
               onClick={ejecutarPago}
               className={`w-full py-3 rounded-lg font-bold transition-all ${puedePagar ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
-              {/* 4. CAMBIO DE TEXTO DEL BOTÓN SI FALTAN DATOS */}
               {!datosBancariosCompletos ? 'ESPERANDO DATOS' : 'REGISTRAR PAGO'}
             </button>
           </div>

@@ -2,12 +2,42 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
+// Catálogo unificado y completo de 15 productos
+const CATALOGO_PRECIOS: Record<string, number> = {
+  'PROD-001': 650000,
+  'PROD-002': 180000,
+  'PROD-003': 120000,
+  'PROD-004': 500000,
+  'PROD-005': 200000,
+  'PROD-006': 250000,
+  'PROD-007': 400000,
+  'PROD-008': 1200000,
+  'PROD-009': 350000,
+  'PROD-010': 150000,
+  'PROD-011': 90000,
+  'PROD-012': 800000,
+  'PROD-013': 700000,
+  'PROD-014': 300000,
+  'PROD-015': 100000,
+};
+
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+}
+
+const obtenerPrecioSeguro = (item: ItemConPrecioOpcional): number => {
+  if (item.precio && item.precio > 0) return item.precio;
+  if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
+  return 0;
+};
+
 export default function BandejaPagos() {
   const navigate = useNavigate();
   const { solicitudes } = useAppContext();
   
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
-  const [orden, setOrden] = useState<string>('fecha-asc'); // fecha-asc, fecha-desc, id-asc
+  const [orden, setOrden] = useState<string>('fecha-asc');
 
   const pendientesGlobales = solicitudes.filter((solicitud) => solicitud.estado === 'Pendiente de Reembolso' || solicitud.estado === 'En Resolución Parcial');
 
@@ -26,72 +56,68 @@ export default function BandejaPagos() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">Bandeja de Reembolsos Pendientes</h1>
-      <p className="text-gray-500 mb-8">Gestione los pagos aprobados por el Inspector y Servicio al Cliente.</p>
-
-      {/* BARRA DE HERRAMIENTAS (Filtros y Ordenamiento) */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 flex justify-between items-center">
-        <div className="flex gap-4 items-center">
-          <label className="text-sm font-semibold text-gray-700">Filtrar por Estado:</label>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Bandeja de Reembolsos</h1>
+          <p className="text-gray-500 text-sm">Finanzas y Liberación de Pagos Bancarios</p>
+        </div>
+        
+        <div className="flex gap-3">
           <select 
-            className="border border-gray-300 rounded p-2 text-sm bg-white focus:ring-blue-500 focus:border-blue-500"
-            value={filtroEstado}
+            value={filtroEstado} 
             onChange={(e) => setFiltroEstado(e.target.value)}
+            className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
           >
-            <option value="Todos">Todos los pendientes</option>
+            <option value="Todos">Todos los estados</option>
             <option value="Pendiente de Reembolso">Pendiente de Reembolso</option>
             <option value="En Resolución Parcial">En Resolución Parcial</option>
           </select>
-        </div>
 
-        <div className="flex gap-4 items-center">
-          <label className="text-sm font-semibold text-gray-700">Ordenar por:</label>
           <select 
-            className="border border-gray-300 rounded p-2 text-sm bg-white focus:ring-blue-500 focus:border-blue-500"
-            value={orden}
+            value={orden} 
             onChange={(e) => setOrden(e.target.value)}
+            className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
           >
-            <option value="fecha-asc">Más recientes primero</option>
-            <option value="fecha-desc">Más antiguos (Urgentes) primero</option>
-            <option value="id-asc">ID de Solicitud (A-Z)</option>
+            <option value="fecha-asc">SLA: Más antiguos primero</option>
+            <option value="fecha-desc">SLA: Más nuevos primero</option>
+            <option value="id-asc">ID Solicitud</option>
           </select>
         </div>
       </div>
 
-      {/* TABLA DE DATOS */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
-              <th className="p-4 font-semibold">ID Solicitud</th>
-              <th className="p-4 font-semibold">Cliente</th>
-              <th className="p-4 font-semibold">Estado de Pago</th>
-              <th className="p-4 font-semibold">Tiempo en Espera</th>
-              <th className="p-4 font-semibold text-right">Monto Estimado</th>
-              <th className="p-4 font-semibold text-center">Acción</th>
+            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
+              <th className="p-4">ID Solicitud</th>
+              <th className="p-4">Cliente</th>
+              <th className="p-4">Estado Interno</th>
+              <th className="p-4">Vencimiento / SLA</th>
+              <th className="p-4 text-right">Monto Estimado</th>
+              <th className="p-4 text-center">Acción</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-100">
             {solicitudesFiltradas.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">No hay solicitudes que coincidan con los filtros.</td>
+                <td colSpan={6} className="p-8 text-center text-gray-500">
+                  No hay pagos pendientes de procesar en este momento.
+                </td>
               </tr>
             ) : (
-              solicitudesFiltradas.map(sol => (
+              solicitudesFiltradas.map((sol) => (
                 <tr key={sol.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-bold text-gray-800">{sol.id}</td>
-                  <td className="p-4 text-gray-700">{sol.cliente.nombre}</td>
+                  <td className="p-4 font-mono font-bold text-gray-900">{sol.id}</td>
+                  <td className="p-4 text-gray-700">{sol.cliente?.nombre || 'Cliente'}</td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      sol.estado === 'Pendiente de Reembolso' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${sol.estado === 'Pendiente de Reembolso' ? 'bg-purple-100 text-purple-800' : 'bg-orange-100 text-orange-800'}`}>
                       {sol.estado}
                     </span>
                   </td>
                   <td className="p-4">
-                    {sol.diasParaExpirar !== null && sol.diasParaExpirar !== undefined ? (
+                    {sol.diasParaExpirar !== undefined && sol.diasParaExpirar !== null ? (
                       sol.diasParaExpirar <= 1 ? (
-                        <span className="flex items-center gap-1 text-red-600 font-bold text-sm">
+                        <span className="flex items-center gap-1 text-red-600 font-bold text-sm animate-pulse">
                           ⚠️ {sol.diasParaExpirar} días (Crítico)
                         </span>
                       ) : sol.diasParaExpirar <= 3 ? (
@@ -104,13 +130,15 @@ export default function BandejaPagos() {
                         </span>
                       )
                     ) : (
-                      <span className="text-gray-400 text-sm">
-                        Sin SLA definido
-                      </span>
+                      <span className="text-gray-400 text-sm">⏳ Quedan 5 días</span>
                     )}
                   </td>
                   <td className="p-4 font-bold text-gray-800 text-right">
-                    ${sol.items.reduce((total, item) => total + (item.precio || (item.id === 'PROD-001' ? 650000 : item.id === 'PROD-002' ? 180000 : 120000)), 0).toLocaleString('es-CL')}
+                    {/* CORRECCIÓN: Filtramos para sumar solo los productos aprobados */}
+                    ${sol.items
+                        .filter(item => item.estado.includes('Aprobado'))
+                        .reduce((total, item) => total + obtenerPrecioSeguro(item), 0)
+                        .toLocaleString('es-CL')}
                   </td>
                   <td className="p-4 text-center">
                     <button 
@@ -126,7 +154,6 @@ export default function BandejaPagos() {
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }
