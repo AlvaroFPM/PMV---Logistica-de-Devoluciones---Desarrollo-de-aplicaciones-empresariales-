@@ -69,14 +69,14 @@ const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => 
 export default function DetalleSolicitud() {
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
-  const { solicitudes, cancelarSolicitud, actualizarDatosBancarios, enviarAInspeccionFisica } = useAppContext();
+  const { solicitudes, cancelarSolicitud, actualizarDatosBancarios, enviarAInspeccionFisica, coordinarRecuperacion, simularVencimiento } = useAppContext();
   const solicitud = solicitudes.find((s) => s.id === idSolicitud) || null;
   const [banco, setBanco] = useState(() => solicitud?.cliente.banco ?? '');
   const [cuenta, setCuenta] = useState(() => solicitud?.cliente.cuenta ?? '');
   const [rut, setRut] = useState(() => solicitud?.cliente.rut ?? '');
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
   const [objetoParaRecuperar, setObjetoParaRecuperar] = useState<string | null>(null);
-  const [objetosCoordinados, setObjetosCoordinados] = useState<string[]>([]);
+  const [itemParaRetiro, setItemParaRetiro] = useState<string | null>(null);
   const [formRecuperacion, setFormRecuperacion] = useState({
     nombres: '',
     rut: '',
@@ -97,8 +97,8 @@ export default function DetalleSolicitud() {
   }
 
   const { id, idOrdenCompra, fechaCreacion, estado, items, cliente, costoEnvioOriginal } = solicitud;
-  const puedeCancelar = estado === 'Creada' || estado === 'En Revisión';
-  const puedeEnviarAInspeccion = estado === 'En Tránsito';
+  const puedeCancelar = estado === 'Creada' || estado === 'En Revisión' || estado === 'Aprobada para Envío';
+  const puedeEnviarAInspeccion = estado === 'Aprobada para Envío' || estado === 'En Tránsito';
   
   // Función para obtener el precio real sin importar si el localStorage falló
   const obtenerPrecioSeguro = (item: ItemConPrecioOpcional) => {
@@ -111,6 +111,7 @@ export default function DetalleSolicitud() {
   const montoAprobado = calcularMontoReembolso(solicitud);
   const requiereDatosBancarios = estado === 'Pendiente de Reembolso';
   const datosBancariosCompletos = banco.trim() !== '' && cuenta.trim() !== '' && rut.trim() !== '';
+  const recuperacionesCoordinadas = solicitud.recuperacionesCoordinadas || [];
 
   const guardarDatosBancarios = () => {
     if (!datosBancariosCompletos) {
@@ -129,9 +130,13 @@ export default function DetalleSolicitud() {
     }
     alert('¡Solicitud de recuperación enviada con éxito!\n\nTe llegará un comprobante al correo con los detalles del envío.');
     if (objetoParaRecuperar) {
-      setObjetosCoordinados(prev => [...prev, objetoParaRecuperar]);
+      coordinarRecuperacion(id, objetoParaRecuperar);
+    }
+    if (itemParaRetiro) {
+      coordinarRecuperacion(id, itemParaRetiro);
     }
     setObjetoParaRecuperar(null);
+    setItemParaRetiro(null);
     setFormRecuperacion({ nombres: '', rut: '', direccion: '', contacto: '' });
   };
 
@@ -151,8 +156,14 @@ export default function DetalleSolicitud() {
               Orden Original: <span className="font-mono text-gray-700">{idOrdenCompra}</span> • Creada el {fechaCreacion}
             </p>
           </div>
-          <div className="pb-1">
+          <div className="pb-1 flex flex-col items-end gap-2">
             <BadgeEstado estado={estado} />
+            {estado === 'Aprobada para Envío' && (
+              <button onClick={() => simularVencimiento(id, 'envio')} className="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors">⏱️ Simular 30 días sin envío</button>
+            )}
+            {estado === 'Pendiente de Reembolso' && (
+              <button onClick={() => simularVencimiento(id, 'bancario')} className="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors">⏱️ Simular 30 días sin datos bancarios</button>
+            )}
           </div>
         </header>
 
@@ -178,17 +189,17 @@ export default function DetalleSolicitud() {
         {puedeEnviarAInspeccion && (
           <div className="bg-sky-50 border border-sky-200 p-4 rounded-xl shadow-sm flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-bold text-sky-800 uppercase tracking-wider">Envío en tránsito</h3>
-              <p className="text-sm text-sky-700 mt-1">Cuando el paquete ya llegó, puedes simular el pase a inspección física para habilitar la revisión de calidad.</p>
+              <h3 className="text-sm font-bold text-sky-800 uppercase tracking-wider">Despachar a Courier</h3>
+              <p className="text-sm text-sky-700 mt-1">Simula que entregaste el producto en la sucursal de correos para que viaje hacia nuestra bodega.</p>
             </div>
             <button
               onClick={() => {
                 enviarAInspeccionFisica(id);
-                alert('La solicitud pasó a En Inspección Física.');
+                alert('La solicitud viajó y ya fue recibida en nuestra bodega central. (Pasó a En Inspección Física)');
               }}
               className="whitespace-nowrap rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 shadow-sm"
             >
-              Enviar a inspección física
+              Simular Envío a Bodega
             </button>
           </div>
         )}
@@ -261,8 +272,16 @@ export default function DetalleSolicitud() {
                         <span className="text-red-700 font-bold text-xs uppercase tracking-wider block mb-1">Acción Requerida</span>
                         <p className="text-[11px] text-red-600 mb-2 leading-tight">Plazo para gestionar retorno: <strong className="text-red-800">15 días hábiles</strong>.</p>
                       </div>
-                      <button className="w-full text-xs font-medium text-white bg-red-600 hover:bg-red-700 py-2 rounded shadow-sm transition-colors mt-auto">
-                        Coordinar Retiro
+                      <button 
+                        onClick={() => setItemParaRetiro(item.id)}
+                        disabled={recuperacionesCoordinadas.includes(item.id)}
+                        className={`w-full text-xs font-medium py-2 rounded shadow-sm transition-colors mt-auto ${
+                          recuperacionesCoordinadas.includes(item.id)
+                            ? 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200'
+                            : 'text-white bg-red-600 hover:bg-red-700'
+                        }`}
+                      >
+                        {recuperacionesCoordinadas.includes(item.id) ? 'Recuperación en curso' : 'Coordinar Recuperación'}
                       </button>
                     </div>
                   ) : item.estado.includes('Aprobado') ? (
@@ -330,14 +349,14 @@ export default function DetalleSolicitud() {
                 <div className="md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-5">
                   <button 
                     onClick={() => setObjetoParaRecuperar(obj.id)}
-                    disabled={objetosCoordinados.includes(obj.id)}
+                    disabled={recuperacionesCoordinadas.includes(obj.id)}
                     className={`w-full text-xs font-medium py-2 rounded shadow-sm transition-colors ${
-                      objetosCoordinados.includes(obj.id)
+                      recuperacionesCoordinadas.includes(obj.id)
                         ? 'bg-gray-100 text-gray-500 cursor-not-allowed border border-gray-200'
                         : 'text-amber-900 bg-amber-200 hover:bg-amber-300'
                     }`}
                   >
-                    {objetosCoordinados.includes(obj.id) ? 'Recuperación en curso' : 'Coordinar Recuperación'}
+                    {recuperacionesCoordinadas.includes(obj.id) ? 'Recuperación en curso' : 'Coordinar Recuperación'}
                   </button>
                 </div>
               </div>
@@ -414,18 +433,20 @@ export default function DetalleSolicitud() {
       </div>
       {imagenAmpliada && <ImageModal src={imagenAmpliada} onClose={() => setImagenAmpliada(null)} />}
 
-      {objetoParaRecuperar && (
+      {(objetoParaRecuperar || itemParaRetiro) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-scale-in">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Coordinar Recuperación</h3>
-              <button onClick={() => setObjetoParaRecuperar(null)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-bold text-gray-900">
+                Coordinar Recuperación
+              </h3>
+              <button onClick={() => { setObjetoParaRecuperar(null); setItemParaRetiro(null); }} className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
             
             <div className="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg border border-blue-200 mb-5">
-              Por favor, ingresa los datos a continuación para que podamos despachar el objeto de vuelta a tu domicilio.
+              Por favor, ingresa los datos a continuación para que podamos despachar el {itemParaRetiro ? 'producto' : 'objeto'} de vuelta a tu domicilio.
             </div>
 
             <form onSubmit={handleRecuperacionSubmit} className="space-y-4">
@@ -477,7 +498,7 @@ export default function DetalleSolicitud() {
               <div className="flex gap-3 pt-4 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setObjetoParaRecuperar(null)}
+                  onClick={() => { setObjetoParaRecuperar(null); setItemParaRetiro(null); }}
                   className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50"
                 >
                   Cancelar

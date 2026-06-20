@@ -83,6 +83,7 @@ export interface SolicitudMaestra {
   items: ItemMaestro[];
   objetos_equivocados: ObjetoEquivocado[];
   diasParaExpirar?: number | null;
+  recuperacionesCoordinadas?: string[];
 }
 
 export interface UsuarioSession {

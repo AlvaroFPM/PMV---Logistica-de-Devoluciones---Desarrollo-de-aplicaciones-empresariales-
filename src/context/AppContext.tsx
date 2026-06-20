@@ -15,9 +15,11 @@ interface AppContextProps {
   cancelarSolicitud: (id: string) => void;
   actualizarDatosBancarios: (id: string, rut: string, banco: string, cuenta: string) => void;
   enviarAInspeccionFisica: (id: string) => void;
+  coordinarRecuperacion: (idSolicitud: string, idItemOObjeto: string) => void;
   evaluarSolicitud: (id: string, decisiones: Record<string, string>) => void;
   inspeccionarSolicitud: (id: string, items: SolicitudMaestra['items'], objetos: SolicitudMaestra['objetos_equivocados']) => void;
   pagarSolicitud: (id: string) => void;
+  simularVencimiento: (id: string, tipo: 'envio' | 'bancario') => void;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -114,25 +116,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const enviarAInspeccionFisica = (id: string) => {
     setSolicitudes((prev) => prev.map((solicitud) => (
-      solicitud.id === id && solicitud.estado === 'En Tránsito'
+      solicitud.id === id && (solicitud.estado === 'En Tránsito' || solicitud.estado === 'Aprobada para Envío')
         ? { ...solicitud, estado: 'En Inspección Física' }
         : solicitud
     )));
+  };
+
+  const coordinarRecuperacion = (idSolicitud: string, idItemOObjeto: string) => {
+    setSolicitudes((prev) => prev.map((solicitud) => {
+      if (solicitud.id !== idSolicitud) return solicitud;
+      const recuperaciones = solicitud.recuperacionesCoordinadas || [];
+      if (recuperaciones.includes(idItemOObjeto)) return solicitud;
+      return { ...solicitud, recuperacionesCoordinadas: [...recuperaciones, idItemOObjeto] };
+    }));
   };
 
   const evaluarSolicitud = (id: string, decisiones: Record<string, string>) => {
     setSolicitudes((prev) => prev.map((solicitud) => {
       if (solicitud.id !== id) return solicitud;
 
-      const actualizada = evaluarPorServicioCliente(solicitud, decisiones);
+      return evaluarPorServicioCliente(solicitud, decisiones);
+    }));
+  };
 
-      if (actualizada.estado === 'Aprobada para Envío') {
-        window.setTimeout(() => {
-          setSolicitudes((current) => current.map((item) => (item.id === id && item.estado === 'Aprobada para Envío' ? { ...item, estado: 'En Tránsito' } : item)));
-        }, 2500);
-      }
-
-      return actualizada;
+  const simularVencimiento = (id: string, tipo: 'envio' | 'bancario') => {
+    setSolicitudes((prev) => prev.map((solicitud) => {
+      if (solicitud.id !== id) return solicitud;
+      const estadoNuevo = tipo === 'envio' ? 'Cancelada — Plazo de Envío Expirado' : 'Cancelada — Plazo Bancario Expirado';
+      return { ...solicitud, estado: estadoNuevo };
     }));
   };
 
@@ -145,7 +156,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppContext.Provider value={{ sesion, solicitudes, cuentas, login, registrarCuenta, logout, crearSolicitud, cancelarSolicitud, actualizarDatosBancarios, enviarAInspeccionFisica, evaluarSolicitud, inspeccionarSolicitud, pagarSolicitud }}>
+    <AppContext.Provider value={{ sesion, solicitudes, cuentas, login, registrarCuenta, logout, crearSolicitud, cancelarSolicitud, actualizarDatosBancarios, enviarAInspeccionFisica, coordinarRecuperacion, evaluarSolicitud, inspeccionarSolicitud, pagarSolicitud, simularVencimiento }}>
       {children}
     </AppContext.Provider>
   );
