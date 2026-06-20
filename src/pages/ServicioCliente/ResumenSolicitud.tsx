@@ -8,7 +8,14 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-003': 120000,
 };
 
-const obtenerPrecioSeguro = (item: any) => {
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+  nombreProducto?: string;
+  nombre?: string;
+}
+
+const obtenerPrecioSeguro = (item: ItemConPrecioOpcional) => {
   if (item.precio && item.precio > 0) return item.precio;
   if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
   return 0;
@@ -49,7 +56,7 @@ export default function ResumenSolicitud() {
               <div key={item.id} className="flex justify-between items-center rounded-lg border border-gray-200 px-4 py-3">
                 <div className="flex flex-col">
                   {/* AQUÍ SE CORRIGE EL ERROR DE TYPESCRIPT */}
-                  <span className="font-medium text-gray-800">{item.nombreProducto || (item as any).nombre || 'Producto'}</span>
+                  <span className="font-medium text-gray-800">{item.nombreProducto || (item as ItemConPrecioOpcional).nombre || 'Producto'}</span>
                   <span className="text-sm font-bold text-gray-600">${obtenerPrecioSeguro(item).toLocaleString('es-CL')}</span>
                 </div>
                 <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{item.estado}</span>

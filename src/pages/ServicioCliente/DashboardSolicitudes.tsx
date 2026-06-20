@@ -9,7 +9,14 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-003': 120000,
 };
 
-const obtenerPrecioSeguro = (item: any) => {
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+  nombreProducto?: string;
+  nombre?: string;
+}
+
+const obtenerPrecioSeguro = (item: ItemConPrecioOpcional) => {
   if (item.precio && item.precio > 0) return item.precio;
   if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
   return 0;

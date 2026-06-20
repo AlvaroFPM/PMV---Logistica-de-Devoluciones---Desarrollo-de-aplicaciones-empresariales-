@@ -8,7 +8,8 @@ import type { ItemFormState, SolicitudMaestra } from '../../types/devolucion';
 const productosOrden = [
   { id: 'PROD-001', nombre: 'Cámara Mirrorless Sony ZVE10', precio: 650000 },
   { id: 'PROD-002', nombre: 'Raqueta Wilson Clash V2 100L', precio: 180000 },
-  { id: 'PROD-003', nombre: 'Teclado Digital Casio CT-S1', precio: 120000 }
+  { id: 'PROD-003', nombre: 'Teclado Digital Casio CT-S1', precio: 120000 },
+  {id: 'PROD-004', nombre: 'Celular Samsung S24+',precio: 500000}
 ];
 
 export default function CrearSolicitud() {

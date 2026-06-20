@@ -1,5 +1,14 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+
+// 1. Interfaz segura para que ESLint no marque errores con datos antiguos
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+  nombreProducto?: string;
+  nombre?: string;
+}
 
 const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-001': 650000,
@@ -7,21 +16,25 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-003': 120000,
 };
 
-const obtenerPrecioSeguro = (item: any) => {
+const obtenerPrecioSeguro = (item: ItemConPrecioOpcional): number => {
   if (item.precio && item.precio > 0) return item.precio;
   if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
   return 0;
 };
 
-export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?: string; onBack?: () => void }) {
+export default function EvaluarSolicitud() {
+  // 2. RECUPERAMOS EL useParams PARA QUE LEA LA URL CORRECTAMENTE
+  const { idSolicitud } = useParams<{ idSolicitud: string }>();
+  const navigate = useNavigate();
   const { solicitudes, evaluarSolicitud } = useAppContext();
+  
   const [itemExpandido, setItemExpandido] = useState<string | null>(null);
   const [decisiones, setDecisiones] = useState<Record<string, string>>({});
   
-  const solicitud = solicitudes.find((item) => item.id === solicitudId);
+  const solicitud = solicitudes.find((item) => item.id === idSolicitud);
 
   if (!solicitud) {
-    return <div className="p-6 text-gray-700">Solicitud no encontrada.</div>;
+    return <div className="p-8 text-center text-gray-500 font-medium">Solicitud no encontrada.</div>;
   }
 
   const toggleExpandir = (id: string) => {
@@ -41,7 +54,7 @@ export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?
     if (!listoParaConfirmar) return;
     evaluarSolicitud(solicitud.id, decisiones);
     alert('¡Evaluación enviada con éxito!');
-    if (onBack) onBack(); 
+    navigate('/servicio-cliente');
   };
 
   const nombreCliente = typeof solicitud.cliente === 'string' ? solicitud.cliente : solicitud.cliente?.nombre || 'Desconocido';
@@ -50,7 +63,8 @@ export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 min-h-screen relative">
       <div className="mb-4">
-        <button onClick={onBack} className="text-sm text-blue-600 hover:underline">← Volver</button>
+        {/* 3. RECUPERAMOS EL useNavigate PARA VOLVER AL PANEL */}
+        <button onClick={() => navigate('/servicio-cliente')} className="text-sm text-blue-600 hover:underline">← Volver</button>
       </div>
       
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 flex justify-between items-start">
@@ -78,8 +92,8 @@ export default function EvaluarSolicitud({ solicitudId, onBack }: { solicitudId?
           const estaExpandido = itemExpandido === item.id;
           const precioItemSeguro = obtenerPrecioSeguro(item);
           
-          // AQUÍ SE CORRIGE EL ERROR DE TYPESCRIPT USANDO (item as any)
-          const nombreProducto = item.nombreProducto || (item as any).nombre || 'Producto';
+          // Tipado seguro para ESLint
+          const nombreProducto = item.nombreProducto || (item as ItemConPrecioOpcional).nombre || 'Producto';
           const descripcionStr = item.descripcion || item.motivo || 'Sin descripción';
           const evidenciaStr = item.evidencia || ''; 
           
