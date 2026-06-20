@@ -74,12 +74,15 @@ export default function ProcesarPago() {
     .filter((item) => seleccionados.includes(item.id))
     .reduce((acc, item) => acc + obtenerPrecioSeguro(item), 0);
 
-  const esGarantia = solicitud.items.every(i => i.motivo === 'Garantía' || i.motivo.includes('Falla'));
-  // La devolución total se evalúa contra la solicitud completa (no contra lo pagable) para la regla de envío
-  const esDevolucionTotal = seleccionados.length === solicitud.items.length;
-  const aplicaEnvio = esGarantia && esDevolucionTotal;
+  const costoEnvioOriginal = solicitud.costoEnvioOriginal || 0;
+  const totalProductosOrden = solicitud.totalProductosOrden || 1;
+  const costoEnvioPorItem = costoEnvioOriginal / totalProductosOrden;
+
+  const costoEnvioAplicable = itemsPagables
+    .filter((item) => seleccionados.includes(item.id) && (item.motivo === 'Garantía' || item.motivo === 'Error de envío'))
+    .reduce((acc) => acc + costoEnvioPorItem, 0);
   
-  const total = subtotal + (aplicaEnvio ? solicitud.costoEnvioOriginal : 0);
+  const total = Math.round(subtotal + costoEnvioAplicable);
 
   const toggleSeleccion = (id: string) => {
     setSeleccionados((prev) => prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]);
@@ -173,14 +176,14 @@ export default function ProcesarPago() {
               </div>
 
               <div className="flex justify-between items-center">
-                <span>Costo de Envío Original</span>
-                {aplicaEnvio ? (
-                  <span className="text-green-600 font-medium">+ ${solicitud.costoEnvioOriginal.toLocaleString('es-CL')}</span>
+                <span>Envío Proporcional (Casos Garantía/Error)</span>
+                {costoEnvioAplicable > 0 ? (
+                  <span className="text-green-600 font-medium">+ ${Math.round(costoEnvioAplicable).toLocaleString('es-CL')}</span>
                 ) : (
                   <div className="text-right">
-                    <span className="line-through text-gray-400 mr-2">${solicitud.costoEnvioOriginal.toLocaleString('es-CL')}</span>
-                    <span className="text-red-500 text-xs font-bold block">
-                      (No aplica: {esGarantia ? 'Devolución parcial' : 'Retracto'})
+                    <span className="text-gray-400 font-medium">$0</span>
+                    <span className="text-gray-500 text-xs block">
+                      (No aplica)
                     </span>
                   </div>
                 )}

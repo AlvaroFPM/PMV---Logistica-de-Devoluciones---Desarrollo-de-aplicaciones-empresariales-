@@ -1,41 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
-
-// Catálogo unificado y completo de 15 productos
-const CATALOGO_PRECIOS: Record<string, number> = {
-  'PROD-001': 650000,
-  'PROD-002': 180000,
-  'PROD-003': 120000,
-  'PROD-004': 500000,
-  'PROD-005': 200000,
-  'PROD-006': 250000,
-  'PROD-007': 400000,
-  'PROD-008': 1200000,
-  'PROD-009': 350000,
-  'PROD-010': 150000,
-  'PROD-011': 90000,
-  'PROD-012': 800000,
-  'PROD-013': 700000,
-  'PROD-014': 300000,
-  'PROD-015': 100000,
-};
-
-interface ItemConPrecioOpcional {
-  id: string;
-  precio?: number;
-}
-
-const obtenerPrecioSeguro = (item: ItemConPrecioOpcional): number => {
-  if (item.precio && item.precio > 0) return item.precio;
-  if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
-  return 0;
-};
+import { calcularMontoReembolso } from '../../utils/reembolso';
 
 export default function BandejaPagos() {
   const navigate = useNavigate();
   const { solicitudes } = useAppContext();
-  
+
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
   const [orden, setOrden] = useState<string>('fecha-asc');
 
@@ -61,10 +32,10 @@ export default function BandejaPagos() {
           <h1 className="text-2xl font-bold text-gray-800">Bandeja de Reembolsos</h1>
           <p className="text-gray-500 text-sm">Finanzas y Liberación de Pagos Bancarios</p>
         </div>
-        
+
         <div className="flex gap-3">
-          <select 
-            value={filtroEstado} 
+          <select
+            value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
           >
@@ -73,8 +44,8 @@ export default function BandejaPagos() {
             <option value="En Resolución Parcial">En Resolución Parcial</option>
           </select>
 
-          <select 
-            value={orden} 
+          <select
+            value={orden}
             onChange={(e) => setOrden(e.target.value)}
             className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
           >
@@ -134,14 +105,10 @@ export default function BandejaPagos() {
                     )}
                   </td>
                   <td className="p-4 font-bold text-gray-800 text-right">
-                    {/* CORRECCIÓN: Filtramos para sumar solo los productos aprobados */}
-                    ${sol.items
-                        .filter(item => item.estado.includes('Aprobado'))
-                        .reduce((total, item) => total + obtenerPrecioSeguro(item), 0)
-                        .toLocaleString('es-CL')}
+                    ${calcularMontoReembolso(sol).toLocaleString('es-CL')}
                   </td>
                   <td className="p-4 text-center">
-                    <button 
+                    <button
                       onClick={() => irAlDetalle(sol.id)}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition-colors shadow-sm"
                     >

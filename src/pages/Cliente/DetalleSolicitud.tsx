@@ -4,6 +4,8 @@ import { BadgeEstado } from '../../components/BadgeEstado';
 import { ImageModal } from '../../components/ImageModal';
 import { useAppContext } from '../../context/AppContext';
 import type { EstadoMaestro } from '../../types/devolucion';
+import { calcularMontoReembolso } from '../../utils/reembolso';
+import { formatearRUT } from '../../utils/formatters';
 
 // Catálogo maestro de respaldo (Evita el bug del monto a $0 en datos viejos)
 const CATALOGO_PRECIOS: Record<string, number> = {
@@ -106,7 +108,7 @@ export default function DetalleSolicitud() {
   };
 
   const itemsAprobados = items.filter((item) => item.estado.includes('Aprobado'));
-  const montoAprobado = itemsAprobados.reduce((total, item) => total + obtenerPrecioSeguro(item), 0);
+  const montoAprobado = calcularMontoReembolso(solicitud);
   const requiereDatosBancarios = estado === 'Pendiente de Reembolso';
   const datosBancariosCompletos = banco.trim() !== '' && cuenta.trim() !== '' && rut.trim() !== '';
 
@@ -198,8 +200,11 @@ export default function DetalleSolicitud() {
               <p className="text-sm text-purple-700 mt-1">El reembolso de los ítems aprobados fluye de forma independiente.</p>
             </div>
             <div className="text-right">
+              <span className="text-sm text-gray-500 font-medium">Monto a Reembolsar</span>
               <span className="block text-2xl font-black text-purple-700">${montoAprobado.toLocaleString('es-CL')}</span>
-              <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full mt-1 inline-block">Pago en proceso</span>
+              {solicitud.estado === 'Finalizada con Éxito' && (
+                <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full mt-1 inline-block">Pago en proceso</span>
+              )}
             </div>
           </div>
         )}
@@ -375,7 +380,7 @@ export default function DetalleSolicitud() {
                 <input
                   type="text"
                   value={rut}
-                  onChange={(e) => setRut(e.target.value)}
+                  onChange={(e) => setRut(formatearRUT(e.target.value))}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                   placeholder="Ej: 123456789"
                 />
@@ -441,7 +446,7 @@ export default function DetalleSolicitud() {
                   type="text"
                   required
                   value={formRecuperacion.rut}
-                  onChange={e => setFormRecuperacion(prev => ({...prev, rut: e.target.value}))}
+                  onChange={e => setFormRecuperacion(prev => ({...prev, rut: formatearRUT(e.target.value)}))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   placeholder="Ej: 19.123.456-7"
                 />

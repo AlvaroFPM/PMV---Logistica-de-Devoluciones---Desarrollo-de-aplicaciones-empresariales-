@@ -60,6 +60,10 @@ export default function CrearSolicitud() {
     if (!solicitudAsociada) return { esBloqueado: false, texto: '' };
     const estado = solicitudAsociada.estado;
 
+    if (estado === 'Cancelada por el Cliente') {
+      return { esBloqueado: false, texto: '' };
+    }
+    
     if (estado === 'Finalizada con Éxito' || estado.startsWith('Cancelada') || estado.startsWith('Cerrada')) {
       return { esBloqueado: true, texto: 'Completada' };
     }
@@ -136,6 +140,7 @@ export default function CrearSolicitud() {
       estado: 'Creada',
       cliente: { nombre: sesion?.nombre || 'Desconocido', rut: '', banco: '', cuenta: '' },
       costoEnvioOriginal: 15000,
+      totalProductosOrden: ordenActual.productos.length,
       objetos_equivocados: [],
       items: itemsSeleccionados.map(([id, estado]) => ({
         id,

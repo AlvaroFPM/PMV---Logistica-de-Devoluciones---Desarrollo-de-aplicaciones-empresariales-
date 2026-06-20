@@ -78,6 +78,7 @@ export interface SolicitudMaestra {
   estado: EstadoMaestro;
   cliente: ClienteInfo;
   costoEnvioOriginal: number;
+  totalProductosOrden?: number;
   items: ItemMaestro[];
   objetos_equivocados: ObjetoEquivocado[];
   diasParaExpirar?: number | null;
