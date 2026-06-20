@@ -9,7 +9,18 @@ const productosOrden = [
   { id: 'PROD-001', nombre: 'Cámara Mirrorless Sony ZVE10', precio: 650000 },
   { id: 'PROD-002', nombre: 'Raqueta Wilson Clash V2 100L', precio: 180000 },
   { id: 'PROD-003', nombre: 'Teclado Digital Casio CT-S1', precio: 120000 },
-  {id: 'PROD-004', nombre: 'Celular Samsung S24+',precio: 500000}
+  { id: 'PROD-004', nombre: 'Celular Samsung S24+',precio: 500000},
+  { id: 'PROD-005', nombre: 'Audífonos Bose QuietComfort 45', precio: 200000},
+  { id: 'PROD-006', nombre: 'Smartwatch Garmin Venu 2', precio: 250000},
+  { id: 'PROD-007', nombre: 'Tablet Apple iPad Air', precio: 400000},
+  { id: 'PROD-008', nombre: 'Laptop Dell XPS 13', precio: 1200000},
+  { id: 'PROD-009', nombre: 'Monitor LG UltraFine 4K', precio: 350000},
+  { id: 'PROD-010', nombre: 'Impresora HP Envy Pro', precio: 150000},
+  { id: 'PROD-011', nombre: 'Cafetera Nespresso Vertuo', precio: 90000},
+  { id: 'PROD-012', nombre: 'Bicicleta Eléctrica Xiaomi', precio: 800000},
+  { id: 'PROD-013', nombre: 'Consola Sony PlayStation 5', precio: 700000},
+  { id: 'PROD-014', nombre: 'Proyector Epson Home Cinema', precio: 300000},
+  { id: 'PROD-015', nombre: 'Altavoz Inteligente Amazon Echo', precio: 50000}
 ];
 
 export default function CrearSolicitud() {

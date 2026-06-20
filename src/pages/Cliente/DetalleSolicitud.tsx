@@ -9,7 +9,26 @@ const CATALOGO_PRECIOS: Record<string, number> = {
   'PROD-001': 650000,
   'PROD-002': 180000,
   'PROD-003': 120000,
+  'PROD-004': 500000,
+  'PROD-005': 200000,
+  'PROD-006': 250000,
+  'PROD-007': 400000,
+  'PROD-008': 1200000,
+  'PROD-009': 350000,
+  'PROD-010': 150000,
+  'PROD-011': 90000,
+  'PROD-012': 800000,
+  'PROD-013': 700000,
+  'PROD-014': 300000,
+  'PROD-015': 50000
 };
+
+interface ItemConPrecioOpcional {
+  id: string;
+  precio?: number;
+  nombreProducto?: string;
+  nombre?: string;
+}
 
 const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => {
   const pasos = ['Creada', 'En Revisión', 'Aprobada para Envío', 'En Tránsito', 'En Inspección Física'];
@@ -47,7 +66,7 @@ const TimelineProgreso = ({ estadoActual }: { estadoActual: EstadoMaestro }) => 
 export default function DetalleSolicitud() {
   const { idSolicitud } = useParams<{ idSolicitud: string }>();
   const navigate = useNavigate();
-  const { solicitudes, cancelarSolicitud, actualizarDatosBancarios } = useAppContext();
+  const { solicitudes, cancelarSolicitud, actualizarDatosBancarios, enviarAInspeccionFisica } = useAppContext();
   const solicitud = solicitudes.find((s) => s.id === idSolicitud) || null;
   const [banco, setBanco] = useState(() => solicitud?.cliente.banco ?? '');
   const [cuenta, setCuenta] = useState(() => solicitud?.cliente.cuenta ?? '');
@@ -66,9 +85,11 @@ export default function DetalleSolicitud() {
   }
 
   const { id, idOrdenCompra, fechaCreacion, estado, items, cliente, costoEnvioOriginal } = solicitud;
+  const puedeCancelar = estado === 'Creada' || estado === 'En Revisión';
+  const puedeEnviarAInspeccion = estado === 'En Tránsito';
   
   // Función para obtener el precio real sin importar si el localStorage falló
-  const obtenerPrecioSeguro = (item: any) => {
+  const obtenerPrecioSeguro = (item: ItemConPrecioOpcional) => {
     if (item.precio && item.precio > 0) return item.precio;
     if (CATALOGO_PRECIOS[item.id]) return CATALOGO_PRECIOS[item.id];
     return 0; 
@@ -127,6 +148,24 @@ export default function DetalleSolicitud() {
           <h2 className="text-lg font-semibold text-gray-800 mb-2">Progreso de la Solicitud</h2>
           <TimelineProgreso estadoActual={estado} />
         </div>
+
+        {puedeEnviarAInspeccion && (
+          <div className="bg-sky-50 border border-sky-200 p-4 rounded-xl shadow-sm flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-sky-800 uppercase tracking-wider">Envío en tránsito</h3>
+              <p className="text-sm text-sky-700 mt-1">Cuando el paquete ya llegó, puedes simular el pase a inspección física para habilitar la revisión de calidad.</p>
+            </div>
+            <button
+              onClick={() => {
+                enviarAInspeccionFisica(id);
+                alert('La solicitud pasó a En Inspección Física.');
+              }}
+              className="whitespace-nowrap rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 shadow-sm"
+            >
+              Enviar a inspección física
+            </button>
+          </div>
+        )}
 
         {itemsAprobados.length > 0 && (
           <div className="bg-purple-50 border border-purple-200 p-5 rounded-xl shadow-sm flex justify-between items-center mt-8">
@@ -201,7 +240,8 @@ export default function DetalleSolicitud() {
                           alert('La devolución fue cancelada.');
                           navigate('/cliente/mis-devoluciones');
                         }}
-                        className="w-full text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:text-red-600 py-2 rounded transition-colors"
+                        disabled={!puedeCancelar}
+                        className={`w-full text-xs font-medium py-2 rounded transition-colors border ${puedeCancelar ? 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-red-600' : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-70'}`}
                       >
                         Cancelar devolución
                       </button>
