@@ -11,9 +11,9 @@ export const evaluarPorServicioCliente = (solicitud: SolicitudMaestra, decisione
 
   if (todosRechazados) {
     nuevoEstado = 'Cancelada — Rechazo Documental';
-  } else if (esMixto) {
-    nuevoEstado = 'En Resolución Parcial';
   } else {
+    // Tanto si todos son aprobados como si es mixto (al menos uno aprobado),
+    // la solicitud debe pasar a Aprobada para Envío para continuar el flujo físico.
     nuevoEstado = 'Aprobada para Envío';
   }
 

@@ -44,7 +44,10 @@ export default function ResumenSolicitud() {
   }
 
   const nombreCliente = typeof solicitud.cliente === 'string' ? solicitud.cliente : solicitud.cliente?.nombre || 'Desconocido';
-  const total = solicitud.items ? solicitud.items.reduce((acc, item) => acc + obtenerPrecioSeguro(item), 0) : 0;
+  const total = solicitud.items ? solicitud.items.reduce((acc, item) => {
+    const esValido = item.estado === 'Pendiente' || item.estado.includes('Aprobado');
+    return acc + (esValido ? obtenerPrecioSeguro(item) : 0);
+  }, 0) : 0;
 
   return (
     <div className="max-w-4xl mx-auto p-6">

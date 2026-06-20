@@ -108,7 +108,10 @@ export default function DashboardSolicitudes() {
                 const totalItems = solicitud.items ? solicitud.items.length : 0;
                 
                 const nombreCliente = typeof solicitud.cliente === 'string' ? solicitud.cliente : solicitud.cliente?.nombre || 'Desconocido';
-                const monto = solicitud.items ? solicitud.items.reduce((total, item) => total + obtenerPrecioSeguro(item), 0) : 0;
+                const monto = solicitud.items ? solicitud.items.reduce((total, item) => {
+                  const esValido = item.estado === 'Pendiente' || item.estado.includes('Aprobado');
+                  return total + (esValido ? obtenerPrecioSeguro(item) : 0);
+                }, 0) : 0;
 
                 return (
                   <tr key={solicitud.id} className="hover:bg-gray-50 transition-colors">
