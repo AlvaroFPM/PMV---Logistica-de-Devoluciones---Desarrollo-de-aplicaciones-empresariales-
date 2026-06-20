@@ -4,86 +4,85 @@ import { TarjetaProductoDevolucion } from '../../components/TarjetaProductoDevol
 import { useAppContext } from '../../context/AppContext';
 import type { ItemFormState, SolicitudMaestra } from '../../types/devolucion';
 
-// Datos simulados de la orden de compra
 const productosOrden = [
   { id: 'PROD-001', nombre: 'Cámara Mirrorless Sony ZVE10', precio: 650000 },
   { id: 'PROD-002', nombre: 'Raqueta Wilson Clash V2 100L', precio: 180000 },
   { id: 'PROD-003', nombre: 'Teclado Digital Casio CT-S1', precio: 120000 },
-  { id: 'PROD-004', nombre: 'Celular Samsung S24+',precio: 500000},
-  { id: 'PROD-005', nombre: 'Audífonos Bose QuietComfort 45', precio: 200000},
-  { id: 'PROD-006', nombre: 'Smartwatch Garmin Venu 2', precio: 250000},
-  { id: 'PROD-007', nombre: 'Tablet Apple iPad Air', precio: 400000},
-  { id: 'PROD-008', nombre: 'Laptop Dell XPS 13', precio: 1200000},
-  { id: 'PROD-009', nombre: 'Monitor LG UltraFine 4K', precio: 350000},
-  { id: 'PROD-010', nombre: 'Impresora HP Envy Pro', precio: 150000},
-  { id: 'PROD-011', nombre: 'Cafetera Nespresso Vertuo', precio: 90000},
-  { id: 'PROD-012', nombre: 'Bicicleta Eléctrica Xiaomi', precio: 800000},
-  { id: 'PROD-013', nombre: 'Consola Sony PlayStation 5', precio: 700000},
-  { id: 'PROD-014', nombre: 'Proyector Epson Home Cinema', precio: 300000},
-  { id: 'PROD-015', nombre: 'Altavoz Inteligente Amazon Echo', precio: 50000}
+  { id: 'PROD-004', nombre: 'Celular Samsung S24+', precio: 500000 },
+  { id: 'PROD-005', nombre: 'Audífonos Bose QuietComfort 45', precio: 200000 },
+  { id: 'PROD-006', nombre: 'Smartwatch Garmin Venu 2', precio: 250000 },
+  { id: 'PROD-007', nombre: 'Tablet Apple iPad Air', precio: 400000 },
+  { id: 'PROD-008', nombre: 'Laptop Dell XPS 13', precio: 1200000 },
+  { id: 'PROD-009', nombre: 'Monitor Gamer LG 27"', precio: 350000 },
+  { id: 'PROD-010', nombre: 'Micrófono HyperX QuadCast', precio: 150000 },
+  { id: 'PROD-011', nombre: 'Mouse Logitech G Pro X', precio: 90000 },
+  { id: 'PROD-012', nombre: 'Consola PlayStation 5', precio: 800000 },
+  { id: 'PROD-013', nombre: 'Silla Gamer Ergonómica', precio: 700000 }, // <-- El error 'merge' fue eliminado aquí
+  { id: 'PROD-014', nombre: 'Escritorio Eléctrico Regulable', precio: 300000 },
+  { id: 'PROD-015', nombre: 'Audífonos HyperX Cloud II', precio: 100000 }
 ];
 
 export default function CrearSolicitud() {
   const navigate = useNavigate();
-  const { crearSolicitud, solicitudes, sesion } = useAppContext();
+  const { crearSolicitud, solicitudes } = useAppContext();
 
-  const productosBloqueados = productosOrden
-    .filter((producto) => solicitudes.some((solicitud) => solicitud.items.some((item) => item.nombreProducto === producto.nombre && !solicitud.estado.startsWith('Cancelada'))))
-    .map((producto) => producto.id);
+  // Función interna para determinar el tipo de bloqueo y el texto exacto
+  const obtenerInfoBloqueo = (nombreProducto: string) => {
+    const solicitudAsociada = solicitudes.find((sol) =>
+      sol.items.some((item) => item.nombreProducto === nombreProducto)
+    );
 
-  // Inicialización perezosa (Lazy Initialization)
+    if (!solicitudAsociada) return { esBloqueado: false, texto: '' };
+
+    const estado = solicitudAsociada.estado;
+
+    // Si el estado es terminal
+    if (estado === 'Finalizada con Éxito' || estado.startsWith('Cancelada') || estado.startsWith('Cerrada')) {
+      return { esBloqueado: true, texto: 'Completada' };
+    }
+
+    // Si la solicitud está viva
+    return { esBloqueado: true, texto: 'Solicitud en curso' };
+  };
+
   const [formItems, setFormItems] = useState<Record<string, ItemFormState>>(() => {
     return productosOrden.reduce((acumulador, producto) => {
       acumulador[producto.id] = {
         seleccionado: false,
         motivo: '',
         comentarios: '',
-        evidencia: '' // Usamos string vacío en vez de null para la persistencia
+        evidencia: ''
       };
       return acumulador;
     }, {} as Record<string, ItemFormState>);
   });
 
-  // Handler para conmutar el checkbox principal de cada tarjeta
   const handleToggleSeleccion = (id: string) => {
     setFormItems((prev) => ({
       ...prev,
-      [id]: {
-        ...prev[id],
-        seleccionado: !prev[id].seleccionado
-      }
+      [id]: { ...prev[id], seleccionado: !prev[id].seleccionado }
     }));
   };
 
-  // Handler unificado para la actualización inmutable de inputs hijos
-  const handleActualizarCampo = (
-    id: string,
-    campo: keyof ItemFormState,
-    valor: string | boolean
-  ) => {
+  const handleActualizarCampo = (id: string, campo: keyof ItemFormState, valor: string | boolean) => {
     setFormItems((prev) => ({
       ...prev,
-      [id]: {
-        ...prev[id],
-        [campo]: valor
-      }
+      [id]: { ...prev[id], [campo]: valor }
     }));
   };
 
-  // Handler del envío del formulario Maestro-Detalle
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Filtramos para aislar únicamente los ítems marcados por el usuario
-    const itemsSeleccionados = Object.entries(formItems)
-      .filter(([, estado]) => estado.seleccionado);
+    
+    // CORRECCIÓN 1: Dejamos el espacio vacío [, estado] para que ESLint no reclame por '_'
+    const itemsSeleccionados = Object.entries(formItems).filter(([, estado]) => estado.seleccionado);
 
     if (itemsSeleccionados.length === 0) {
       alert('Debes seleccionar al menos un producto para devolver.');
       return;
     }
 
-    // Validación estricta
+    // CORRECCIÓN 2: Igual aquí, omitimos la primera variable para calmar a ESLint
     const faltanDatos = itemsSeleccionados.some(([, estado]) => !estado.motivo || !estado.evidencia);
     if (faltanDatos) {
       alert('Por favor, selecciona el motivo y adjunta la evidencia en todos los productos marcados.');
@@ -95,12 +94,7 @@ export default function CrearSolicitud() {
       idOrdenCompra: 'OC-2026-771',
       fechaCreacion: new Date().toISOString().split('T')[0],
       estado: 'Creada',
-      cliente: {
-        nombre: sesion?.nombre ?? 'Cliente Demo',
-        rut: 'N/A',
-        banco: 'Pendiente',
-        cuenta: 'Pendiente'
-      },
+      cliente: { nombre: 'Amaro', rut: '19.123.456-7', banco: 'Banco de Chile', cuenta: '123456789' },
       costoEnvioOriginal: 15000,
       objetos_equivocados: [],
       items: itemsSeleccionados.map(([id, estado]) => ({
@@ -108,10 +102,11 @@ export default function CrearSolicitud() {
         nombreProducto: productosOrden.find((p) => p.id === id)?.nombre || 'Producto',
         precio: productosOrden.find((p) => p.id === id)?.precio || 0,
         motivo: estado.motivo,
-        descripcion: estado.comentarios,
         evidencia: estado.evidencia,
+        // CORRECCIÓN 3: Agregamos la propiedad 'descripcion' mapeando los comentarios del formulario
+        descripcion: estado.comentarios || '', 
         estado: 'Pendiente',
-        n_serie: 'N/A'
+        n_serie: `SN-${Math.floor(100000 + Math.random() * 900000)}`
       }))
     };
 
@@ -123,38 +118,37 @@ export default function CrearSolicitud() {
   return (
     <div className="min-h-screen bg-gray-50 p-6 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
-        
-        {/* Cabecera del Documento */}
         <header>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Crear Solicitud de Devolución</h1>
           <p className="text-gray-500 mt-1">Orden de Compra: <span className="font-mono text-gray-700">OC-2026-771</span></p>
         </header>
 
-        {/* Contenedor del Formulario */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-800 mb-5">
               Selecciona los productos a devolver
             </h2>
             
-            
             <div className="space-y-4">
-              {productosOrden.map((producto) => (
-                <TarjetaProductoDevolucion
-                  key={producto.id}
-                  idProducto={producto.id}
-                  nombreProducto={producto.nombre}
-                  precio={producto.precio} // ¡AQUÍ ESTÁ LA NUEVA PROPIEDAD!
-                  bloqueadoPorConcurrencia={productosBloqueados.includes(producto.id)}
-                  estadoFormulario={formItems[producto.id]}
-                  onToggleSeleccion={handleToggleSeleccion}
-                  onActualizarCampo={handleActualizarCampo}
-                />
-              ))}
+              {productosOrden.map((producto) => {
+                const infoBloqueo = obtenerInfoBloqueo(producto.nombre);
+                return (
+                  <TarjetaProductoDevolucion
+                    key={producto.id}
+                    idProducto={producto.id}
+                    nombreProducto={producto.nombre}
+                    precio={producto.precio}
+                    bloqueadoPorConcurrencia={infoBloqueo.esBloqueado}
+                    textoBloqueo={infoBloqueo.texto}
+                    estadoFormulario={formItems[producto.id]}
+                    onToggleSeleccion={handleToggleSeleccion}
+                    onActualizarCampo={handleActualizarCampo}
+                  />
+                );
+              })}
             </div>
           </div>
 
-          {/* Bloque informativo de Regla de Negocio (RN5) */}
           <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex gap-3">
             <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -165,24 +159,22 @@ export default function CrearSolicitud() {
             </div>
           </div>
 
-          {/* Botonera de Acción */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={() => navigate('/cliente/mis-devoluciones')}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
             >
               Enviar Solicitud
             </button>
           </div>
         </form>
-
       </div>
     </div>
   );

@@ -3,9 +3,10 @@ import type { ItemFormState } from '../types/devolucion';
 interface TarjetaProductoDevolucionProps {
   idProducto: string;
   nombreProducto: string;
-  precio: number; // Añadimos la propiedad del precio
+  precio: number;
   imagenUrl?: string;
   bloqueadoPorConcurrencia: boolean;
+  textoBloqueo?: string; // <-- NUEVA PROP OPCIONAL
   estadoFormulario: ItemFormState;
   onToggleSeleccion: (id: string) => void;
   onActualizarCampo: (
@@ -21,6 +22,7 @@ export function TarjetaProductoDevolucion({
   precio,
   imagenUrl,
   bloqueadoPorConcurrencia,
+  textoBloqueo, // <-- Consumimos la nueva propiedad
   estadoFormulario,
   onToggleSeleccion,
   onActualizarCampo
@@ -41,7 +43,6 @@ export function TarjetaProductoDevolucion({
 
   return (
     <div className={`p-4 rounded-lg border transition-all duration-200 ${containerClasses}`}>
-      {/* CABECERA: Checkbox, Título y Precio */}
       <div className="flex items-start gap-4">
         <div className="flex items-center h-6 mt-1">
           <input
@@ -71,12 +72,12 @@ export function TarjetaProductoDevolucion({
           
           {bloqueadoPorConcurrencia && (
             <span className="inline-flex items-center mt-2 px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">
-              Solicitud en curso
+              {/* RENDERIZADO DINÁMICO DEL TEXTO */}
+              {textoBloqueo || 'Solicitud en curso'}
             </span>
           )}
         </div>
 
-        {/* Renderizado del Precio a la derecha */}
         <div className="text-right shrink-0">
             <span className={`font-bold text-lg ${bloqueadoPorConcurrencia ? 'text-gray-400' : 'text-gray-700'}`}>
                 ${precio.toLocaleString('es-CL')}
@@ -84,10 +85,8 @@ export function TarjetaProductoDevolucion({
         </div>
       </div>
 
-      {/* CUERPO: Formulario que se expande */}
       {!bloqueadoPorConcurrencia && estadoFormulario.seleccionado && (
         <div className="mt-4 pt-4 border-t border-gray-200/60 pl-9 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          
           <div>
             <label htmlFor={`motivo-${idProducto}`} className="block text-sm font-medium text-gray-700 mb-1">
               Motivo de la devolución <span className="text-red-500">*</span>
@@ -143,7 +142,6 @@ export function TarjetaProductoDevolucion({
               className="block p-2.5 w-full text-sm text-gray-900 bg-white rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-
         </div>
       )}
     </div>
