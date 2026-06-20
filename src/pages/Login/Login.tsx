@@ -62,13 +62,6 @@ const Login = () => {
 
           {!modoRegistro ? (
             <form onSubmit={handleLogin} className="space-y-4 text-left bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
-                <p className="font-semibold text-slate-700 mb-1">Cuentas de demostración</p>
-                <p>cliente@pmv.cl / Cliente#2026</p>
-                <p>agente@pmv.cl / Agente#2026</p>
-                <p>inspector@pmv.cl / Inspector#2026</p>
-                <p>pagos@pmv.cl / Pagos#2026</p>
-              </div>
               <label className="block text-sm font-semibold text-gray-700">
                 Correo
                 <input

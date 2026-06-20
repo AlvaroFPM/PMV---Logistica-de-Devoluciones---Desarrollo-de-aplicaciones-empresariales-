@@ -54,6 +54,7 @@ const mapearItemsAmaestro = (items: ItemInspeccion[]): SolicitudMaestra['items']
     nombreProducto: item.nombre,
     precio: 0,
     motivo: item.motivo,
+    descripcion: '',
     evidencia: '',
     estado: convertirEstadoDesdeInspeccion(item.estado_inspeccion),
     n_serie: item.n_serie

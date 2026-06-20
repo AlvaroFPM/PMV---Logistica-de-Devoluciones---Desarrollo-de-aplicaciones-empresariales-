@@ -64,7 +64,7 @@ export default function CrearSolicitud() {
 
     // Filtramos para aislar únicamente los ítems marcados por el usuario
     const itemsSeleccionados = Object.entries(formItems)
-      .filter(([_, estado]) => estado.seleccionado);
+      .filter(([, estado]) => estado.seleccionado);
 
     if (itemsSeleccionados.length === 0) {
       alert('Debes seleccionar al menos un producto para devolver.');
@@ -72,7 +72,7 @@ export default function CrearSolicitud() {
     }
 
     // Validación estricta
-    const faltanDatos = itemsSeleccionados.some(([_, estado]) => !estado.motivo || !estado.evidencia);
+    const faltanDatos = itemsSeleccionados.some(([, estado]) => !estado.motivo || !estado.evidencia);
     if (faltanDatos) {
       alert('Por favor, selecciona el motivo y adjunta la evidencia en todos los productos marcados.');
       return;
@@ -96,6 +96,7 @@ export default function CrearSolicitud() {
         nombreProducto: productosOrden.find((p) => p.id === id)?.nombre || 'Producto',
         precio: productosOrden.find((p) => p.id === id)?.precio || 0,
         motivo: estado.motivo,
+        descripcion: estado.comentarios,
         evidencia: estado.evidencia,
         estado: 'Pendiente',
         n_serie: 'N/A'

@@ -108,12 +108,12 @@ export default function EvaluarSolicitud() {
 
               {/* DETALLE EXPANDIDO */}
               {estaExpandido && (
-                <div className="p-5 border-t border-gray-100 bg-gray-50 flex flex-col xl:flex-row gap-6">
-                  <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="p-5 border-t border-gray-100 bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-[1.25fr_1.05fr_0.9fr] gap-6 items-start">
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">Descripción del cliente</p>
                       <div className="bg-white p-4 rounded border border-gray-200 text-sm text-gray-700 min-h-[180px] flex items-start">
-                        <p className="leading-6 whitespace-pre-line">{item.motivo}</p>
+                        <p className="leading-6 whitespace-pre-line">{item.descripcion || item.motivo}</p>
                       </div>
                     </div>
 
@@ -125,18 +125,16 @@ export default function EvaluarSolicitud() {
                           alt={`Evidencia de ${item.nombreProducto}`}
                           className="w-full max-h-48 object-cover rounded"
                         />
-                        <p className="mt-2 text-xs text-gray-500 font-mono text-center break-all">{item.evidencia}</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* BOTONES DE DECISIÓN */}
-                  <div className="w-full xl:w-64 xl:border-l border-gray-200 pl-0 xl:pl-6 flex flex-col justify-center">
-                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-3">Decisión Documental</p>
-                    <div className="flex flex-col gap-2">
-                      <button onClick={() => manejarDecision(item.id, 'Aprobado')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Aprobado' ? 'bg-green-50 border-green-500 text-green-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>✅ Aprobar Envío</button>
-                      <button onClick={() => manejarDecision(item.id, 'Rechazar Documento')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Rechazar Documento' ? 'bg-red-50 border-red-500 text-red-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>❌ Rechazar (Falta Evidencia)</button>
-                      <button onClick={() => manejarDecision(item.id, 'Rechazar Políticas')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Rechazar Políticas' ? 'bg-red-50 border-red-500 text-red-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>❌ Rechazar (Políticas/Garantía)</button>
+
+                    <div className="xl:border-l border-gray-200 xl:pl-6 flex flex-col justify-center">
+                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-3">Decisión Documental</p>
+                      <div className="flex flex-col gap-2">
+                        <button onClick={() => manejarDecision(item.id, 'Aprobado')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Aprobado' ? 'bg-green-50 border-green-500 text-green-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>✅ Aprobar Envío</button>
+                        <button onClick={() => manejarDecision(item.id, 'Rechazar Documento')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Rechazar Documento' ? 'bg-red-50 border-red-500 text-red-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>❌ Rechazar (Falta Evidencia)</button>
+                        <button onClick={() => manejarDecision(item.id, 'Rechazar Políticas')} className={`px-3 py-2 text-sm text-left rounded border transition-all ${decisiones[item.id] === 'Rechazar Políticas' ? 'bg-red-50 border-red-500 text-red-700 font-semibold shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100'}`}>❌ Rechazar (Políticas/Garantía)</button>
+                      </div>
                     </div>
                   </div>
                 </div>

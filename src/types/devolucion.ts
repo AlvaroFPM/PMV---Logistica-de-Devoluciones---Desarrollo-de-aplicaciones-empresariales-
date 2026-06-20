@@ -32,6 +32,7 @@ export interface ItemMaestro {
   nombreProducto: string;
   precio: number;
   motivo: string;
+  descripcion: string;
   evidencia: string;
   estado: EstadoItem;
   n_serie: string;

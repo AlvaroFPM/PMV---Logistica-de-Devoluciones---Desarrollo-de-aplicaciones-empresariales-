@@ -10,8 +10,8 @@ export const solicitudesIniciales: SolicitudMaestra[] = [
     costoEnvioOriginal: 15000,
     objetos_equivocados: [],
     items: [
-      { id: 'ITM-001', nombreProducto: 'Samsung Galaxy S24+', precio: 850000, motivo: 'Garantía', evidencia: 'foto1.jpg', estado: 'Pendiente', n_serie: 'SN-998877' },
-      { id: 'ITM-002', nombreProducto: 'Cargador 45W', precio: 45000, motivo: 'Retracto', evidencia: 'foto2.jpg', estado: 'Pendiente', n_serie: 'N/A' }
+      { id: 'ITM-001', nombreProducto: 'Samsung Galaxy S24+', precio: 850000, motivo: 'Garantía', descripcion: 'La pantalla presenta líneas y parpadea al encender.', evidencia: 'foto1.jpg', estado: 'Pendiente', n_serie: 'SN-998877' },
+      { id: 'ITM-002', nombreProducto: 'Cargador 45W', precio: 45000, motivo: 'Retracto', descripcion: 'No fue utilizado y el cliente solicita devolución por retracto.', evidencia: 'foto2.jpg', estado: 'Pendiente', n_serie: 'N/A' }
     ]
   },
   {
@@ -23,7 +23,7 @@ export const solicitudesIniciales: SolicitudMaestra[] = [
     costoEnvioOriginal: 5000,
     objetos_equivocados: [],
     items: [
-      { id: 'ITM-003', nombreProducto: 'Teclado Mecánico', precio: 120000, motivo: 'Garantía', evidencia: 'teclado.jpg', estado: 'Aprobado — Apto para Reacondicionamiento', n_serie: 'KB-1122' }
+      { id: 'ITM-003', nombreProducto: 'Teclado Mecánico', precio: 120000, motivo: 'Garantía', descripcion: 'Una de las teclas deja de responder de forma intermitente.', evidencia: 'teclado.jpg', estado: 'Aprobado — Apto para Reacondicionamiento', n_serie: 'KB-1122' }
     ]
   },
   {
@@ -35,7 +35,7 @@ export const solicitudesIniciales: SolicitudMaestra[] = [
     costoEnvioOriginal: 8000,
     objetos_equivocados: [],
     items: [
-      { id: 'ITM-004', nombreProducto: 'Raqueta Wilson', precio: 180000, motivo: 'Retracto', evidencia: 'raqueta.jpg', estado: 'Pendiente', n_serie: 'RW-555' }
+      { id: 'ITM-004', nombreProducto: 'Raqueta Wilson', precio: 180000, motivo: 'Retracto', descripcion: 'El cliente compró por error el modelo y no lo ha usado.', evidencia: 'raqueta.jpg', estado: 'Pendiente', n_serie: 'RW-555' }
     ]
   }
 ];

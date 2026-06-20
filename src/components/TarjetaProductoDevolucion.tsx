@@ -31,11 +31,16 @@ export function TarjetaProductoDevolucion({
     ? 'border-blue-500 bg-blue-50/30 shadow-sm'
     : 'border-gray-300 bg-white hover:border-blue-300';
 
-  // Manejador simulado para el input tipo archivo
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      onActualizarCampo(idProducto, 'evidencia', file.name);
+      const lector = new FileReader();
+
+      lector.onload = () => {
+        onActualizarCampo(idProducto, 'evidencia', String(lector.result ?? file.name));
+      };
+
+      lector.readAsDataURL(file);
     }
   };
 
@@ -129,14 +134,14 @@ export function TarjetaProductoDevolucion({
           {/* Campo: Comentarios */}
           <div>
             <label htmlFor={`comentarios-${idProducto}`} className="block text-sm font-medium text-gray-700 mb-1">
-              Detalles adicionales
+              Descripción del problema
             </label>
             <textarea
               id={`comentarios-${idProducto}`}
               rows={2}
               value={estadoFormulario.comentarios}
               onChange={(e) => onActualizarCampo(idProducto, 'comentarios', e.target.value)}
-              placeholder="Describa el problema con el producto..."
+              placeholder="Describa la situación con el producto..."
               className="block p-2.5 w-full text-sm text-gray-900 bg-white rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
