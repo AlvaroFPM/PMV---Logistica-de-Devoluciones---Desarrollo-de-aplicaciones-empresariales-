@@ -23,6 +23,7 @@ export type EstadoInspeccion =
 export interface ClienteInfo {
   rut: string;
   nombre: string;
+  email?: string;
   banco: string;
   cuenta: string;
 }

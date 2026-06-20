@@ -53,9 +53,14 @@ export default function CrearSolicitud() {
   const ordenActual = ORDENES_CLIENTE.find(o => o.id === idOrdenActiva)!;
 
   const obtenerInfoBloqueo = (nombreProducto: string) => {
-    const solicitudAsociada = solicitudes.find((sol) =>
-      sol.items.some((item) => item.nombreProducto === nombreProducto)
-    );
+    // Solo bloqueamos si la solicitud pertenece al mismo cliente autenticado actualmente
+    const solicitudAsociada = solicitudes.find((sol) => {
+      const perteneceAlCliente = sol.cliente.email 
+        ? sol.cliente.email === sesion?.usuario 
+        : sol.cliente.nombre === sesion?.nombre;
+      
+      return perteneceAlCliente && sol.items.some((item) => item.nombreProducto === nombreProducto);
+    });
 
     if (!solicitudAsociada) return { esBloqueado: false, texto: '' };
     const estado = solicitudAsociada.estado;
@@ -63,7 +68,7 @@ export default function CrearSolicitud() {
     if (estado === 'Cancelada por el Cliente') {
       return { esBloqueado: false, texto: '' };
     }
-    
+
     if (estado === 'Finalizada con Éxito' || estado.startsWith('Cancelada') || estado.startsWith('Cerrada')) {
       return { esBloqueado: true, texto: 'Completada' };
     }
@@ -85,7 +90,7 @@ export default function CrearSolicitud() {
   const handleCambioOrden = (nuevaOrdenId: string) => {
     setIdOrdenActiva(nuevaOrdenId);
     const nuevaOrden = ORDENES_CLIENTE.find(o => o.id === nuevaOrdenId)!;
-    
+
     const nuevoEstado = nuevaOrden.productos.reduce((acumulador, producto) => {
       acumulador[producto.id] = {
         seleccionado: false,
@@ -95,7 +100,7 @@ export default function CrearSolicitud() {
       };
       return acumulador;
     }, {} as Record<string, ItemFormState>);
-    
+
     setFormItems(nuevoEstado);
   };
 
@@ -119,7 +124,7 @@ export default function CrearSolicitud() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const itemsSeleccionados = Object.entries(formItems).filter(([, estado]) => estado.seleccionado);
 
     if (itemsSeleccionados.length === 0) {
@@ -138,7 +143,7 @@ export default function CrearSolicitud() {
       idOrdenCompra: idOrdenActiva,
       fechaCreacion: generarFechaActual(), // <--- Llamamos a la función segura
       estado: 'Creada',
-      cliente: { nombre: sesion?.nombre || 'Desconocido', rut: '', banco: '', cuenta: '' },
+      cliente: { nombre: sesion?.nombre || 'Desconocido', email: sesion?.usuario, rut: '', banco: '', cuenta: '' },
       costoEnvioOriginal: 15000,
       totalProductosOrden: ordenActual.productos.length,
       objetos_equivocados: [],
@@ -148,7 +153,7 @@ export default function CrearSolicitud() {
         precio: ordenActual.productos.find((p) => p.id === id)?.precio || 0,
         motivo: estado.motivo,
         evidencia: estado.evidencia,
-        descripcion: estado.comentarios || '', 
+        descripcion: estado.comentarios || '',
         estado: 'Pendiente',
         n_serie: generarSerialAleatorio() // <--- Llamamos a la función segura
       }))
@@ -168,7 +173,7 @@ export default function CrearSolicitud() {
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <label htmlFor="selector-orden" className="block text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">
               1. Selecciona tu Orden de Compra
@@ -191,7 +196,7 @@ export default function CrearSolicitud() {
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-5">
               2. Selecciona los productos a devolver
             </h2>
-            
+
             <div className="space-y-4">
               {ordenActual.productos.map((producto) => {
                 const infoBloqueo = obtenerInfoBloqueo(producto.nombre);
