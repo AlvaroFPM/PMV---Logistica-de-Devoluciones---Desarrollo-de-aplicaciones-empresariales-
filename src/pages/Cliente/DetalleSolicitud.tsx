@@ -158,6 +158,18 @@ export default function DetalleSolicitud() {
           </div>
           <div className="pb-1 flex flex-col items-end gap-2">
             <BadgeEstado estado={estado} />
+            {puedeCancelar && (
+              <button
+                onClick={() => {
+                  cancelarSolicitud(id);
+                  alert('La devolución fue cancelada.');
+                  navigate('/cliente/mis-devoluciones');
+                }}
+                className="text-xs font-medium py-1.5 px-3 rounded shadow-sm transition-colors border text-gray-600 bg-white border-gray-300 hover:bg-gray-50 hover:text-red-600"
+              >
+                Cancelar Solicitud Completa
+              </button>
+            )}
             {estado === 'Aprobada para Envío' && (
               <button onClick={() => simularVencimiento(id, 'envio')} className="text-[10px] bg-red-50 text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-100 transition-colors">⏱️ Simular 30 días sin envío</button>
             )}
@@ -289,19 +301,15 @@ export default function DetalleSolicitud() {
                       <span className="text-green-500 text-2xl block mb-1">✓</span>
                       <span className="text-sm font-medium text-gray-700">Aprobado para reembolso</span>
                     </div>
+                  ) : estado.includes('Cancelada') ? (
+                    <div className="text-center h-full flex flex-col justify-center">
+                      <span className="text-gray-400 text-2xl block mb-1">🚫</span>
+                      <span className="text-sm font-medium text-gray-500">Cancelado</span>
+                    </div>
                   ) : (
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          cancelarSolicitud(id);
-                          alert('La devolución fue cancelada.');
-                          navigate('/cliente/mis-devoluciones');
-                        }}
-                        disabled={!puedeCancelar}
-                        className={`w-full text-xs font-medium py-2 rounded transition-colors border ${puedeCancelar ? 'text-gray-600 bg-gray-50 border-gray-200 hover:bg-gray-100 hover:text-red-600' : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed opacity-70'}`}
-                      >
-                        Cancelar devolución
-                      </button>
+                    <div className="text-center h-full flex flex-col justify-center">
+                      <span className="text-gray-400 text-2xl block mb-1">⏳</span>
+                      <span className="text-sm font-medium text-gray-500">Pendiente de resolución</span>
                     </div>
                   )}
                   

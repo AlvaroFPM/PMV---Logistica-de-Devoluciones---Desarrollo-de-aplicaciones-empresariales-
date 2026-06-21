@@ -32,28 +32,6 @@ export default function BandejaPagos() {
           <h1 className="text-2xl font-bold text-gray-800">Bandeja de Reembolsos</h1>
           <p className="text-gray-500 text-sm">Finanzas y Liberación de Pagos Bancarios</p>
         </div>
-
-        <div className="flex gap-3">
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
-          >
-            <option value="Todos">Todos los estados</option>
-            <option value="Pendiente de Reembolso">Pendiente de Reembolso</option>
-            <option value="En Resolución Parcial">En Resolución Parcial</option>
-          </select>
-
-          <select
-            value={orden}
-            onChange={(e) => setOrden(e.target.value)}
-            className="bg-white border border-gray-300 rounded px-3 py-1.5 text-sm"
-          >
-            <option value="fecha-asc">SLA: Más antiguos primero</option>
-            <option value="fecha-desc">SLA: Más nuevos primero</option>
-            <option value="id-asc">ID Solicitud</option>
-          </select>
-        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
