@@ -485,14 +485,23 @@ export default function DetalleSolicitud() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Número de Contacto</label>
-                <input
-                  type="tel"
-                  required
-                  value={formRecuperacion.contacto}
-                  onChange={e => setFormRecuperacion(prev => ({...prev, contacto: e.target.value}))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Ej: +56 9 1234 5678"
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm font-medium">
+                    +56
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={9}
+                    value={formRecuperacion.contacto}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      setFormRecuperacion(prev => ({...prev, contacto: val}));
+                    }}
+                    className="w-full border border-gray-300 rounded-r-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="9 1234 5678"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-gray-100">
